@@ -29,7 +29,7 @@
 
     <script>
         // ===========================================================
-        // ⚠️ 1. วาง URL จาก Google Apps Script ตรงนี้ ⚠️
+        // ⚠️ อย่าลืมตรวจสอบ URL Google Apps Script ให้ถูกต้อง ⚠️
         // ===========================================================
         const API_URL = "https://script.google.com/macros/s/AKfycbxjl2-P7ia1wsrY_ptExFJWUWI4VUU8GKL9-XYujPSt-0TNAuEXNRw-VLibzq9cH0o/exec"; 
 
@@ -44,6 +44,29 @@
         function toggleSidebar() { const sb=document.getElementById('sidebar'), ov=document.getElementById('sidebar-overlay'); isSidebarOpen=!isSidebarOpen; if(isSidebarOpen){sb.classList.remove('-translate-x-full');ov.classList.remove('hidden');}else{sb.classList.add('-translate-x-full');ov.classList.add('hidden');} }
         async function callApi(action, data = {}) { const body = JSON.stringify({ action, ...data }); const response = await fetch(API_URL, { method: 'POST', body: body, headers: { "Content-Type": "text/plain;charset=utf-8" } }); return await response.json(); }
 
+        // --- Logic คัดเลือก (ไม่ต้องแก้) ---
+        function calculateAdmissions(allStudents) {
+            allStudents.forEach(s => s.admission_result = null);
+            // ม.1
+            let m1Candidates = allStudents.filter(s => s.grade_level.toLowerCase() === 'p6');
+            let smList = m1Candidates.filter(s => s.choice_1 === 'S&M').sort((a,b) => b.total_score - a.total_score);
+            smList.slice(0, 80).forEach(s => s.admission_result = 'S&M');
+            let gateList = m1Candidates.filter(s => !s.admission_result && (s.choice_1 === 'GATE' || s.choice_2 === 'GATE' || s.choice_3 === 'GATE'));
+            gateList.sort((a, b) => { let pA = a.choice_1 === 'GATE' ? 1 : (a.choice_2 === 'GATE' ? 2 : 3); let pB = b.choice_1 === 'GATE' ? 1 : (b.choice_2 === 'GATE' ? 2 : 3); if (pA !== pB) return pA - pB; return b.total_score - a.total_score; });
+            gateList.slice(0, 60).forEach(s => s.admission_result = 'GATE');
+            let eisList = m1Candidates.filter(s => !s.admission_result && (s.choice_1 === 'EIS' || s.choice_2 === 'EIS' || s.choice_3 === 'EIS'));
+            eisList.sort((a, b) => { let pA = a.choice_1 === 'EIS' ? 1 : (a.choice_2 === 'EIS' ? 2 : 3); let pB = b.choice_1 === 'EIS' ? 1 : (b.choice_2 === 'EIS' ? 2 : 3); if (pA !== pB) return pA - pB; return b.total_score - a.total_score; });
+            eisList.slice(0, 60).forEach(s => s.admission_result = 'EIS');
+            // ม.4
+            let m4Candidates = allStudents.filter(s => s.grade_level.toLowerCase() === 'm3');
+            let smeList = m4Candidates.filter(s => s.choice_1 === 'SME').sort((a,b) => b.total_score - a.total_score);
+            smeList.slice(0, 80).forEach(s => s.admission_result = 'SME');
+            let gateM4List = m4Candidates.filter(s => !s.admission_result && (s.choice_1 === 'GATE' || s.choice_2 === 'GATE'));
+            gateM4List.sort((a, b) => { let pA = a.choice_1 === 'GATE' ? 1 : 2; let pB = b.choice_1 === 'GATE' ? 1 : 2; if (pA !== pB) return pA - pB; return b.total_score - a.total_score; });
+            gateM4List.slice(0, 60).forEach(s => s.admission_result = 'GATE');
+            return allStudents;
+        }
+
         window.dataSdk = {
             init: async (handler) => { window.dataSdkHandler = handler; await window.dataSdk.refresh(); return { isOk: true }; },
             refresh: async () => { 
@@ -51,7 +74,9 @@
                     const res = await callApi('getAllStudents');
                     if (res.success) { 
                         let rawData = res.students.map(s => ({ ...s, __backendId: s.id })); 
-                        // คำนวณ Rank ตามคะแนนรวม (วิชาการ + ปฏิบัติ)
+                        // ** ปิดระบบจัดอันดับชั่วคราว ** (เปิดเมื่อต้องการ: uncomment บรรทัดล่าง)
+                        // rawData = calculateAdmissions(rawData); 
+                        
                         const m1 = rawData.filter(s => ['p4','p5','p6','m1'].includes(s.grade_level.toLowerCase())).sort((a,b)=>b.total_score - a.total_score);
                         const m4 = rawData.filter(s => ['m3','m4'].includes(s.grade_level.toLowerCase())).sort((a,b)=>b.total_score - a.total_score);
                         m1.forEach((s,i) => s.rank = i+1); m4.forEach((s,i) => s.rank = i+1);
@@ -109,24 +134,57 @@
             </div>`;
         }
 
-        // --- STUDENT VIEW (UPDATED LAYOUT) ---
+        // --- FIX: Handle Login (Robust & Trimmed) ---
+        function handleLogin(e) { 
+            e.preventDefault(); 
+            const isStudent = !document.getElementById('input-student').classList.contains('hidden'); 
+            
+            if(isStudent){ 
+                // Check if data loaded
+                if(studentsData.length === 0) {
+                    showAlert('กำลังโหลดข้อมูล', 'กรุณารอสักครู่ ระบบกำลังดึงข้อมูลจากฐานข้อมูล...');
+                    return;
+                }
+
+                // Clean input: remove spaces and non-digit chars
+                const inputVal = document.getElementById('login-id').value.replace(/[^0-9]/g, '');
+                
+                // Compare with cleaned database values
+                const user = studentsData.find(s => String(s.national_id).replace(/[^0-9]/g, '') === inputVal);
+                
+                if(user){
+                    currentUser = user; 
+                    currentView = 'student'; 
+                    render();
+                } else {
+                    showAlert('ไม่พบข้อมูล', 'ไม่พบเลขบัตรประชาชนนี้ในระบบ หรือท่านกรอกผิดพลาด');
+                }
+            } else { 
+                if(document.getElementById('admin-user').value === 'admin' && document.getElementById('admin-pass').value === 'admin'){
+                    currentView='admin';
+                    render();
+                } else {
+                    showAlert('ผิดพลาด', 'ชื่อผู้ใช้หรือรหัสผ่านผิด'); 
+                }
+            } 
+        }
+
         function renderStudentView() {
             if(!currentUser) return;
             const s = currentUser;
             const maxSci=40, maxMath=30, maxEng=30;
             const pSci=(s.science_score/maxSci)*100, pMath=(s.math_score/maxMath)*100, pEng=(s.english_score/maxEng)*100;
+            const thaiGrade = getThaiGrade(s.grade_level);
             
-            // Grade Check
-            const rawG = String(s.grade_level).toLowerCase().trim();
-            const isPreTest = rawG.includes('p4') || rawG.includes('p5') || rawG.includes('ประถมศึกษาปีที่ 4') || rawG.includes('ประถมศึกษาปีที่ 5');
-            const isSecondary = rawG.includes('m3') || rawG.includes('มัธยม');
+            const rawGrade = String(s.grade_level).toLowerCase().trim();
+            const isPreTest = rawGrade.includes('p4') || rawGrade.includes('p5') || rawGrade.includes('ประถมศึกษาปีที่ 4') || rawGrade.includes('ประถมศึกษาปีที่ 5');
+            const isSecondary = rawGrade.includes('m3') || rawGrade.includes('มัธยม');
             const showChoices = !isPreTest;
 
-            // คะแนนรวม 3 วิชา
+            // คะแนนรวม (วิชาการ 100 + ปฏิบัติ)
             const academicTotal = s.math_score + s.science_score + s.english_score;
             const practicalScore = s.practical_score || 0;
             
-            // คำนวณ Max Score ตามโครงการ (S&M=20, อื่นๆ=100)
             let maxPrac = 100;
             if (s.choice_1 && s.choice_1.includes('S&M')) maxPrac = 20;
             const maxGrandTotal = 100 + maxPrac;
@@ -145,9 +203,7 @@
                         </div>
                         <button onclick="currentView='login';render()" class="shrink-0 bg-white/80 backdrop-blur-sm text-red-500 hover:bg-red-500 hover:text-white px-4 py-2 rounded-full text-xs font-bold shadow-sm border border-red-100 ml-2">ออกจากระบบ</button>
                     </div>
-                    
                     <div class="bg-white rounded-[2rem] p-6 shadow-xl mb-6 relative overflow-hidden border border-lime-100">
-                        <div class="absolute top-0 right-0 w-32 h-32 bg-lime-50 rounded-full -mr-10 -mt-10 opacity-60"></div>
                         <div class="flex flex-col md:flex-row items-center gap-6 relative z-10">
                             <div class="flex-1 text-center md:text-left w-full">
                                 <h2 class="text-2xl font-bold text-gray-800 mb-1">${s.full_name}</h2>
@@ -197,13 +253,11 @@
                             <span class="text-xs font-bold bg-white/20 px-4 py-1.5 rounded-full mt-3">คิดเป็นร้อยละ ${((grandTotal/maxGrandTotal)*100).toFixed(1)}</span>
                         </div>
                     </div>
-
                     <div class="mt-8 mb-4 text-center border-t border-gray-200/50 pt-4"><p class="text-xs text-gray-400 font-medium">พัฒนาระบบโดย ครูอานนท์ เมืองแก้ว</p></div>
                 </div>
             </div>`;
         }
 
-        // --- Admin Dashboard ---
         function renderAdminDashboard() {
             const m1 = studentsData.filter(s => ['p4','p5','p6','m1'].includes(s.grade_level.toLowerCase()));
             const m4 = studentsData.filter(s => ['m3','m4'].includes(s.grade_level.toLowerCase()));
@@ -242,10 +296,8 @@
             </div>`;
         }
 
-        // --- Logic Functions ---
         function toggleLogin(mode) { document.getElementById('login-buttons').classList.add('hidden'); document.getElementById('login-form-container').classList.remove('hidden'); if(mode==='student'){document.getElementById('input-student').classList.remove('hidden');document.getElementById('input-admin').classList.add('hidden');}else{document.getElementById('input-student').classList.add('hidden');document.getElementById('input-admin').classList.remove('hidden');} }
         function resetLogin() { document.getElementById('login-form-container').classList.add('hidden'); document.getElementById('login-buttons').classList.remove('hidden'); }
-        function handleLogin(e) { e.preventDefault(); const isStudent = !document.getElementById('input-student').classList.contains('hidden'); if(isStudent){ const id = document.getElementById('login-id').value.trim(); const user = studentsData.find(s => String(s.national_id).trim() === String(id)); if(user){currentUser = user; currentView = 'student'; render();}else showAlert('ไม่พบข้อมูล', 'ไม่พบเลขบัตรประชาชนนี้ในระบบ'); }else{ if(document.getElementById('admin-user').value === 'admin' && document.getElementById('admin-pass').value === 'admin'){currentView='admin';render();}else showAlert('ผิดพลาด', 'ชื่อผู้ใช้หรือรหัสผ่านผิด'); } }
         function triggerSearch() { searchQuery = document.getElementById('search-input').value.trim(); renderAdminDashboard(); }
         function toggleAllCheckboxes(source) { const checkboxes = document.querySelectorAll('.row-checkbox'); checkboxes.forEach(cb => { cb.checked = source.checked; if(source.checked) checkedIds.add(cb.value); else checkedIds.delete(cb.value); }); updateDeleteButton(); }
         function toggleCheckbox(id) { const cb = document.querySelector(`.row-checkbox[value="${id}"]`); if(cb.checked) checkedIds.add(id); else checkedIds.delete(id); updateDeleteButton(); }
