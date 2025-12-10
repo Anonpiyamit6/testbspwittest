@@ -237,43 +237,44 @@
     // ฟังก์ชันอัปเดตตัวเลือกห้องเรียนโครงการ
     function updateChoiceOptions() {
         const grade = document.getElementById('form-grade').value;
+        const choice3El = document.getElementById('form-choice-3');
+        const choice3Container = choice3El.closest('div'); // หา div ที่คลุมอันดับ 3 อยู่
         
-        // ระบุ ID ของ Dropdown ทั้ง 3 อัน
-        const choices = ['form-choice-1', 'form-choice-2', 'form-choice-3'];
-        
-        // หา Element พ่อ (div) ของอันดับ 3 เพื่อสั่งซ่อน/แสดง
-        const choice3Div = document.getElementById('form-choice-3').closest('div');
-        
+        const choices = ['form-choice-1', 'form-choice-2']; // 2 อันดับแรกมีเสมอ
         let options = [];
-        
+
         // เช็คระดับชั้น
-        // ถ้าเป็นประถม (สอบเข้า ม.1) -> มี 3 อันดับ (S&M, GATE, EIS)
         if (['p4','p5','p6'].includes(grade)) {
+            // --- กรณีสอบเข้า ม.1 ---
             options = ['S&M', 'GATE', 'EIS', 'ทั่วไป'];
             
             // แสดงอันดับ 3
-            if(choice3Div) choice3Div.classList.remove('invisible');
+            choice3Container.classList.remove('hidden');
             
+            // อัปเดตตัวเลือกอันดับ 3 เฉพาะของ ม.1
+            const currentVal3 = choice3El.value;
+            choice3El.innerHTML = '<option value="">- เลือก -</option>' + options.map(o => `<option value="${o}">${o}</option>`).join('');
+            choice3El.value = currentVal3;
+
         } else {
-            // ถ้าเป็นมัธยม (สอบเข้า ม.4) -> มี 2 อันดับ (SME, GATE)
+            // --- กรณีสอบเข้า ม.4 ---
+            // ตัวเลือกมีแค่ SME กับ GATE (ตามโจทย์)
             options = ['SME', 'GATE', 'ทั่วไป'];
             
-            // ซ่อนอันดับ 3 (ใช้ invisible เพื่อคง Layout ตารางไว้ไม่ให้เบี้ยว)
-            if(choice3Div) choice3Div.classList.add('invisible');
+            // ซ่อนอันดับ 3 ทิ้งไปเลย (ใช้ class hidden)
+            choice3Container.classList.add('hidden');
             
-            // เคลียร์ค่าอันดับ 3 ทิ้ง (กันข้อมูลค้าง)
-            document.getElementById('form-choice-3').value = '';
+            // เคลียร์ค่าอันดับ 3 เพื่อไม่ให้มีข้อมูลขยะ
+            choice3El.value = '';
+            choice3El.innerHTML = '<option value="">-</option>';
         }
-        
-        // อัปเดตตัวเลือกใน <option> ของทุก Dropdown
+
+        // อัปเดตตัวเลือกสำหรับอันดับ 1 และ 2
         choices.forEach(id => {
             const el = document.getElementById(id);
-            const currentVal = el.value; // จำค่าเดิมไว้ก่อน
-            
+            const currentVal = el.value;
             el.innerHTML = '<option value="">- เลือก -</option>' + options.map(o => `<option value="${o}">${o}</option>`).join('');
-            
-            // คืนค่าเดิมกลับไป (ถ้าค่าเดิมยังตรงกับตัวเลือกใหม่)
-            el.value = currentVal; 
+            el.value = currentVal;
         });
     }
 
@@ -410,8 +411,8 @@
 
        const thaiGrade = getThaiGrade(currentUser.grade_level);
        
-       // เช็คว่าเป็นระดับสอบเข้า ม.4 หรือไม่ (ถ้าใช่ จะซ่อนอันดับ 3)
-       const isM4Entrance = ['m3', 'm4'].includes(currentUser.grade_level.toLowerCase());
+       // ตรวจสอบว่าเป็น ม.3 หรือ ม.4 (เพื่อใช้ Logic ของ ม.ปลาย)
+       const isSecondary = ['m3', 'm4'].includes(currentUser.grade_level.toLowerCase());
 
        document.getElementById('app').innerHTML = `
           <div class="h-full bg-[#fdfbf7] overflow-auto">
@@ -448,7 +449,8 @@
 
                             <div class="border-t border-gray-100 pt-4">
                                 <p class="text-xs text-gray-400 font-bold mb-2 text-left">ลำดับการเลือกห้องเรียนโครงการ</p>
-                                <div class="grid ${isM4Entrance ? 'grid-cols-2' : 'grid-cols-3'} gap-2">
+                                
+                                <div class="grid ${isSecondary ? 'grid-cols-2' : 'grid-cols-3'} gap-2">
                                     <div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center">
                                         <span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 1</span>
                                         <span class="text-sm font-bold text-gray-700 truncate block">${currentUser.choice_1 || '-'}</span>
@@ -458,7 +460,7 @@
                                         <span class="text-sm font-bold text-gray-700 truncate block">${currentUser.choice_2 || '-'}</span>
                                     </div>
                                     
-                                    ${!isM4Entrance ? `
+                                    ${!isSecondary ? `
                                     <div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center">
                                         <span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 3</span>
                                         <span class="text-sm font-bold text-gray-700 truncate block">${currentUser.choice_3 || '-'}</span>
