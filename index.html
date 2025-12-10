@@ -164,6 +164,7 @@
         <div id="view-single" class="block pb-20 md:pb-0">
             <form id="student-form" onsubmit="handleSingleSubmit(event)">
                 <input type="hidden" id="student-backend-id">
+                
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
                     <div><label class="block text-gray-500 text-xs font-bold mb-2 uppercase">เลขบัตรประชาชน</label><input type="text" id="form-national-id" class="w-full px-4 py-3 rounded-xl border-gray-200 input-field" placeholder="00xxxxxxxxxxx" required></div>
                     <div><label class="block text-gray-500 text-xs font-bold mb-2 uppercase">รหัสประจำตัวสอบ</label><input type="text" id="form-exam-id" class="w-full px-4 py-3 rounded-xl border-gray-200 input-field" required></div>
@@ -172,16 +173,16 @@
                     <div class="md:col-span-2"><label class="block text-gray-500 text-xs font-bold mb-2 uppercase">โรงเรียนเดิม</label><input type="text" id="form-school" class="w-full px-4 py-3 rounded-xl border-gray-200 input-field"></div>
                     
                     <div class="md:col-span-2 bg-blue-50 p-4 rounded-xl border border-blue-100">
-    <label class="block text-blue-800 text-sm font-bold mb-3">เลือกโครงการ</label>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div><label class="text-xs text-gray-500">อันดับ 1</label><select id="form-choice-1" class="w-full p-2 rounded border border-gray-200 text-sm"><option value="">- เลือก -</option></select></div>
-        <div><label class="text-xs text-gray-500">อันดับ 2</label><select id="form-choice-2" class="w-full p-2 rounded border border-gray-200 text-sm"><option value="">- เลือก -</option></select></div>
-        
-        <div id="div-choice-3"><label class="text-xs text-gray-500">อันดับ 3</label><select id="form-choice-3" class="w-full p-2 rounded border border-gray-200 text-sm"><option value="">- เลือก -</option></select></div>
-    </div>
-</div>
+                        <label class="block text-blue-800 text-sm font-bold mb-3">เลือกโครงการ</label>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div><label class="text-xs text-gray-500">อันดับ 1</label><select id="form-choice-1" class="w-full p-2 rounded border border-gray-200 text-sm"><option value="">- เลือก -</option></select></div>
+                            <div><label class="text-xs text-gray-500">อันดับ 2</label><select id="form-choice-2" class="w-full p-2 rounded border border-gray-200 text-sm"><option value="">- เลือก -</option></select></div>
+                            <div id="div-choice-3"><label class="text-xs text-gray-500">อันดับ 3</label><select id="form-choice-3" class="w-full p-2 rounded border border-gray-200 text-sm"><option value="">- เลือก -</option></select></div>
+                        </div>
+                    </div>
+                </div>
                 
-                <div id="score-section" class="bg-amber-50/50 p-4 md:p-6 rounded-2xl border border-amber-100">
+                <div id="score-section" class="bg-amber-50/50 p-4 md:p-6 rounded-2xl border border-amber-100 mb-6 w-full">
                     <h3 class="text-sm font-bold text-amber-600 mb-4 uppercase">คะแนนสอบ</h3>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                         <div><label class="text-xs text-gray-500 font-semibold">วิทยาศาสตร์ (40)</label><input type="number" step="0.01" id="score-science" class="w-full px-3 py-2 rounded-lg border-gray-200 text-center font-bold text-lime-600 input-field"></div>
@@ -189,23 +190,14 @@
                         <div><label class="text-xs text-gray-500 font-semibold">ภาษาอังกฤษ (30)</label><input type="number" step="0.01" id="score-english" class="w-full px-3 py-2 rounded-lg border-gray-200 text-center font-bold text-lime-600 input-field"></div>
                     </div>
                 </div>
-                <div class="flex justify-end pt-6 gap-3">
-                  <button type="button" onclick="closeModal()" class="px-6 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold">ยกเลิก</button>
-                  <button type="submit" class="px-8 py-3 btn-primary rounded-xl font-bold">บันทึก</button>
+
+                <div class="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-4">
+                    <button type="button" onclick="closeModal()" class="px-6 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-colors">ยกเลิก</button>
+                    <button type="submit" class="px-8 py-3 btn-primary rounded-xl font-bold shadow-lg shadow-amber-200/50">บันทึก</button>
                 </div>
             </form>
         </div>
-        <div id="view-multiple" class="hidden h-full flex flex-col"><div class="flex-1 overflow-auto border border-gray-100 rounded-xl mb-4 shadow-inner bg-gray-50/50"><table class="w-full text-sm text-left text-gray-500" id="multiple-table"><thead class="text-xs text-gray-500 uppercase bg-gray-100 sticky top-0"><tr><th class="px-2 py-3">เลขบัตร</th><th class="px-2 py-3">รหัส</th><th class="px-2 py-3">ชื่อ</th><th class="px-2 py-3">ชั้น</th><th class="px-2 py-3">รร.</th><th class="px-1 py-3">ลบ</th></tr></thead><tbody id="multiple-tbody" class="bg-white"></tbody></table></div><div class="flex justify-between items-center bg-white p-2 rounded-lg gap-2"><button type="button" onclick="addMultipleRow()" class="flex-1 text-lime-600 font-bold bg-lime-50 px-3 py-3 rounded-lg">+ เพิ่มแถว</button><button type="button" onclick="handleMultipleSubmit()" class="flex-1 btn-primary px-3 py-3 rounded-lg font-bold text-yellow-900 shadow-md">บันทึก</button></div></div>
-         <div id="view-excel" class="hidden"><div class="border-2 border-dashed border-lime-200 bg-lime-50/30 rounded-2xl p-6 md:p-10 text-center hover:bg-lime-50 transition-colors cursor-pointer" id="drop-zone-name"><label for="excel-upload-name" class="cursor-pointer block"><span class="block text-lg font-bold text-lime-700">เลือกไฟล์ Excel (รายชื่อ)</span><input id="excel-upload-name" type="file" class="hidden" accept=".xlsx, .xls" onchange="handleExcelUpload(this, 'student')"></label></div><div class="mt-6 bg-amber-50 p-6 rounded-2xl border border-amber-100"><h4 class="font-bold text-amber-700 mb-2">คำแนะนำ</h4><ul class="text-sm text-amber-800 space-y-1 ml-7 list-disc"><li>A: รหัสสอบ</li><li>B: เลขบัตรฯ</li><li>C: ชื่อ-นามสกุล</li><li>D: ชั้น</li><li>E: รร.เดิม</li><li>F: อันดับ 1</li><li>G: อันดับ 2</li><li>H: อันดับ 3</li></ul></div><div id="excel-preview-area" class="mt-6 hidden"><div class="flex justify-between items-center mb-3"><h4 class="font-bold text-gray-700 text-sm">ข้อมูล (<span id="excel-count">0</span> คน)</h4><button type="button" onclick="confirmExcelImport('student')" class="px-4 py-2 btn-primary rounded-lg font-bold text-sm shadow-md">ยืนยัน</button></div><div class="overflow-auto max-h-48 border border-gray-200 rounded-xl text-xs bg-white"><table class="w-full text-left" id="excel-preview-table"></table></div></div></div>
-         <div id="view-score" class="hidden"><div class="border-2 border-dashed border-purple-200 bg-purple-50/30 rounded-2xl p-6 md:p-10 text-center hover:bg-purple-50 transition-colors cursor-pointer" id="drop-zone-score"><label for="excel-upload-score" class="cursor-pointer block"><span class="block text-lg font-bold text-purple-700">เลือกไฟล์ Excel (คะแนน)</span><input id="excel-upload-score" type="file" class="hidden" accept=".xlsx, .xls" onchange="handleExcelUpload(this, 'score')"></label></div></div>
-      </div>
-    </div>
-  </div>
-
-  <div id="alert-modal" class="hidden-force fixed inset-0 flex items-center justify-center z-[200] px-4"><div class="modal-overlay absolute w-full h-full" onclick="closeAlert()"></div><div class="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl p-6 text-center relative z-[201] border border-lime-50"><h3 class="text-lg font-bold text-gray-800 mb-2" id="alert-title">แจ้งเตือน</h3><p class="text-gray-500 mb-6 text-sm" id="alert-message">ข้อความ</p><button onclick="closeAlert()" class="w-full py-3 bg-lime-400 text-white rounded-xl font-bold shadow-md">ตกลง</button></div></div>
-  <div id="confirm-modal" class="hidden-force fixed inset-0 flex items-center justify-center z-[200] px-4"><div class="modal-overlay absolute w-full h-full" onclick="closeConfirm()"></div><div class="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl p-6 text-center relative z-[201] border border-amber-50"><h3 class="text-lg font-bold text-gray-800 mb-2" id="confirm-title">ยืนยัน</h3><p class="text-gray-500 mb-6 text-sm" id="confirm-message">ดำเนินการ?</p><div class="flex gap-3"><button onclick="closeConfirm()" class="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold">ยกเลิก</button><button onclick="confirmAction()" class="flex-1 py-3 bg-amber-400 text-white rounded-xl font-bold shadow-md">ยืนยัน</button></div></div></div>
-  <div id="loading-modal" class="hidden-force fixed inset-0 flex items-center justify-center z-[300]"><div class="modal-overlay absolute w-full h-full bg-white/80 backdrop-blur-sm"></div><div class="bg-white rounded-3xl shadow-xl p-6 w-48 text-center relative z-[301] border border-lime-50"><div class="mx-auto w-12 h-12 border-4 border-lime-100 border-t-lime-500 rounded-full animate-spin mb-3"></div><p class="text-lime-600 font-bold text-sm" id="loading-message">กำลังโหลด...</p></div></div>
-  
+       
   <script>
     const defaultConfig = { 
         system_title: "ระบบประกาศผลคะแนน<br>การสอบแข่งขันทักษะวิชาการเพชรราชพฤกษ์<br><span class='text-sm font-normal'>โรงเรียนบางสะพานวิทยา จังหวัดประจวบคีรีขันธ์</span>", 
