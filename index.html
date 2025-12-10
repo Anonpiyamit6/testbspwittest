@@ -172,14 +172,14 @@
                     <div class="md:col-span-2"><label class="block text-gray-500 text-xs font-bold mb-2 uppercase">โรงเรียนเดิม</label><input type="text" id="form-school" class="w-full px-4 py-3 rounded-xl border-gray-200 input-field"></div>
                     
                     <div class="md:col-span-2 bg-blue-50 p-4 rounded-xl border border-blue-100">
-                        <label class="block text-blue-800 text-sm font-bold mb-3">เลือกโครงการ (3 อันดับ)</label>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                            <div><label class="text-xs text-gray-500">อันดับ 1</label><select id="form-choice-1" class="w-full p-2 rounded border border-gray-200 text-sm"><option value="">- เลือก -</option></select></div>
-                            <div><label class="text-xs text-gray-500">อันดับ 2</label><select id="form-choice-2" class="w-full p-2 rounded border border-gray-200 text-sm"><option value="">- เลือก -</option></select></div>
-                            <div><label class="text-xs text-gray-500">อันดับ 3</label><select id="form-choice-3" class="w-full p-2 rounded border border-gray-200 text-sm"><option value="">- เลือก -</option></select></div>
-                        </div>
-                    </div>
-                </div>
+    <label class="block text-blue-800 text-sm font-bold mb-3">เลือกโครงการ</label>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div><label class="text-xs text-gray-500">อันดับ 1</label><select id="form-choice-1" class="w-full p-2 rounded border border-gray-200 text-sm"><option value="">- เลือก -</option></select></div>
+        <div><label class="text-xs text-gray-500">อันดับ 2</label><select id="form-choice-2" class="w-full p-2 rounded border border-gray-200 text-sm"><option value="">- เลือก -</option></select></div>
+        
+        <div id="div-choice-3"><label class="text-xs text-gray-500">อันดับ 3</label><select id="form-choice-3" class="w-full p-2 rounded border border-gray-200 text-sm"><option value="">- เลือก -</option></select></div>
+    </div>
+</div>
                 
                 <div id="score-section" class="bg-amber-50/50 p-4 md:p-6 rounded-2xl border border-amber-100">
                     <h3 class="text-sm font-bold text-amber-600 mb-4 uppercase">คะแนนสอบ</h3>
@@ -235,47 +235,199 @@
 
     // --- Options for Choices ---
     // ฟังก์ชันอัปเดตตัวเลือกห้องเรียนโครงการ
+    // 1. ฟังก์ชันอัปเดตตัวเลือก (แก้ให้ ม.4 เหลือแค่ 2 ตัวเลือก และซ่อนอันดับ 3)
     function updateChoiceOptions() {
         const grade = document.getElementById('form-grade').value;
-        const choice3El = document.getElementById('form-choice-3');
-        const choice3Container = choice3El.closest('div'); // หา div ที่คลุมอันดับ 3 อยู่
+        const choice3Div = document.getElementById('div-choice-3'); // ใช้ ID ที่ตั้งใหม่
+        const choice3Select = document.getElementById('form-choice-3');
         
-        const choices = ['form-choice-1', 'form-choice-2']; // 2 อันดับแรกมีเสมอ
+        const choices = ['form-choice-1', 'form-choice-2'];
         let options = [];
 
-        // เช็คระดับชั้น
         if (['p4','p5','p6'].includes(grade)) {
-            // --- กรณีสอบเข้า ม.1 ---
+            // ม.1: มี 3 อันดับ
             options = ['S&M', 'GATE', 'EIS', 'ทั่วไป'];
+            choice3Div.classList.remove('hidden'); // แสดงอันดับ 3
             
-            // แสดงอันดับ 3
-            choice3Container.classList.remove('hidden');
-            
-            // อัปเดตตัวเลือกอันดับ 3 เฉพาะของ ม.1
-            const currentVal3 = choice3El.value;
-            choice3El.innerHTML = '<option value="">- เลือก -</option>' + options.map(o => `<option value="${o}">${o}</option>`).join('');
-            choice3El.value = currentVal3;
-
+            // อัปเดตตัวเลือกอันดับ 3
+            const val3 = choice3Select.value;
+            choice3Select.innerHTML = '<option value="">- เลือก -</option>' + options.map(o => `<option value="${o}">${o}</option>`).join('');
+            choice3Select.value = val3;
         } else {
-            // --- กรณีสอบเข้า ม.4 ---
-            // ตัวเลือกมีแค่ SME กับ GATE (ตามโจทย์)
-            options = ['SME', 'GATE', 'ทั่วไป'];
+            // ม.4: มีแค่ SME กับ GATE และซ่อนอันดับ 3
+            options = ['SME', 'GATE']; // ตัด 'ทั่วไป' ออกตามโจทย์
             
-            // ซ่อนอันดับ 3 ทิ้งไปเลย (ใช้ class hidden)
-            choice3Container.classList.add('hidden');
-            
-            // เคลียร์ค่าอันดับ 3 เพื่อไม่ให้มีข้อมูลขยะ
-            choice3El.value = '';
-            choice3El.innerHTML = '<option value="">-</option>';
+            choice3Div.classList.add('hidden'); // ซ่อนอันดับ 3
+            choice3Select.value = ''; // ล้างค่าทิ้ง
         }
 
-        // อัปเดตตัวเลือกสำหรับอันดับ 1 และ 2
+        // อัปเดตอันดับ 1 และ 2
         choices.forEach(id => {
             const el = document.getElementById(id);
-            const currentVal = el.value;
+            const val = el.value;
             el.innerHTML = '<option value="">- เลือก -</option>' + options.map(o => `<option value="${o}">${o}</option>`).join('');
-            el.value = currentVal;
+            el.value = val;
         });
+    }
+
+    // 2. ฟังก์ชันเปิด Modal แก้ไข (เพิ่มการเรียก updateChoiceOptions)
+    function showEditForm(id) { 
+        formMode = 'update'; 
+        document.getElementById('modal-title').textContent = 'แก้ไขข้อมูล';
+        document.getElementById('add-mode-tabs').classList.add('hidden'); 
+        ['single','multiple','excel','score'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden')); 
+        document.getElementById('view-single').classList.remove('hidden'); 
+        document.getElementById('score-section').classList.remove('hidden'); 
+        
+        const s = studentsData.find(x => x.__backendId === id); if(!s) return; 
+        
+        // ใส่ข้อมูลลงฟอร์ม
+        document.getElementById('student-backend-id').value = s.__backendId; 
+        document.getElementById('form-national-id').value = s.national_id || ''; 
+        document.getElementById('form-exam-id').value = s.exam_id; 
+        document.getElementById('form-grade').value = s.grade_level; 
+        document.getElementById('form-name').value = s.full_name; 
+        document.getElementById('form-school').value = s.previous_school; 
+        document.getElementById('score-science').value = s.science_score; 
+        document.getElementById('score-math').value = s.math_score; 
+        document.getElementById('score-english').value = s.english_score; 
+        
+        // สำคัญ: เรียกอัปเดตตัวเลือกก่อน แล้วค่อยใส่ค่า Choice
+        updateChoiceOptions(); 
+        
+        setTimeout(() => {
+            document.getElementById('form-choice-1').value = s.choice_1 || '';
+            document.getElementById('form-choice-2').value = s.choice_2 || '';
+            document.getElementById('form-choice-3').value = s.choice_3 || '';
+        }, 50);
+        
+        openModal(); 
+    }
+
+    // 3. ฟังก์ชันเปิด Modal เพิ่ม (เพิ่มการเรียก updateChoiceOptions)
+    function showAddStudentForm() { 
+        formMode = 'create'; 
+        document.getElementById('modal-title').textContent = 'เพิ่มผู้เข้าสอบใหม่';
+        document.getElementById('student-form').reset(); 
+        document.getElementById('add-mode-tabs').classList.remove('hidden'); 
+        document.getElementById('score-section').classList.add('hidden'); 
+        switchAddTab('single'); 
+        
+        updateChoiceOptions(); // เรียกทันทีที่เปิด
+        openModal(); 
+    }
+
+    // 4. ฟังก์ชันแสดงผลหน้าผู้เข้าสอบ (แก้ให้แสดง Choice ที่เลือก)
+    function renderStudentView() {
+       if(!currentUser) return;
+       
+       const maxSci = 40; const maxMath = 30; const maxEng = 30; const maxTotal = 100;
+       
+       const sSci = parseFloat(currentUser.science_score)||0;
+       const sMath = parseFloat(currentUser.math_score)||0;
+       const sEng = parseFloat(currentUser.english_score)||0;
+       const sTotal = sSci + sMath + sEng;
+       
+       const pSci = (sSci/maxSci)*100;
+       const pMath = (sMath/maxMath)*100;
+       const pEng = (sEng/maxEng)*100;
+
+       const thaiGrade = getThaiGrade(currentUser.grade_level);
+       const isSecondary = ['m3', 'm4'].includes(currentUser.grade_level.toLowerCase());
+
+       document.getElementById('app').innerHTML = `
+          <div class="h-full bg-[#fdfbf7] overflow-auto">
+             <div class="gradient-bg h-48 w-full absolute top-0 left-0 z-0 rounded-b-[3rem] shadow-lg opacity-90"></div>
+             <div class="relative z-10 max-w-4xl mx-auto p-4 pt-8 pb-10">
+                
+                <div class="flex justify-between items-start mb-6">
+                    <div class="flex flex-col">
+                        <span class="text-lg md:text-xl font-bold text-lime-900 leading-tight">ประกาศผลคะแนนการสอบ</span>
+                        <span class="text-lg md:text-xl font-bold text-lime-900 leading-tight">แข่งขันทักษะวิชาการเพชรราชพฤกษ์</span>
+                        <span class="text-lg md:text-xl font-bold text-lime-900 leading-tight">ปีการศึกษา 2569</span>
+                        <span class="text-lime-800 font-medium text-sm mt-2">โรงเรียนบางสะพานวิทยา จังหวัดประจวบคีรีขันธ์</span>
+                    </div>
+                    <button onclick="currentView='login';render()" class="shrink-0 bg-white/80 backdrop-blur-sm text-red-500 hover:bg-red-500 hover:text-white px-4 py-2 rounded-full text-xs font-bold shadow-sm transition-all border border-red-100 ml-2">ออกจากระบบ</button>
+                </div>
+                
+                <div class="bg-white rounded-[2rem] p-6 shadow-xl mb-6 relative overflow-hidden border border-lime-100">
+                   <div class="absolute top-0 right-0 w-32 h-32 bg-lime-50 rounded-full -mr-10 -mt-10 opacity-60"></div>
+                   
+                   <div class="flex flex-col md:flex-row items-center gap-6 relative z-10">
+                        <div class="flex-1 text-center md:text-left w-full">
+                            <h2 class="text-2xl font-bold text-gray-800 mb-1">${currentUser.full_name}</h2>
+                            <p class="text-lime-600 font-medium mb-4 text-sm">${thaiGrade}</p>
+                            
+                            ${currentUser.admission_result 
+                                ? `<div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl text-center"><p class="text-green-800 font-bold text-lg">ขอแสดงความยินดี</p><p class="text-green-600">ผ่านการคัดเลือกเข้าศึกษาต่อโครงการ <span class="font-bold text-xl block mt-1">${currentUser.admission_result}</span></p></div>` 
+                                : `<div class="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-xl text-center"><p class="text-gray-500">ยังไม่ผ่านเกณฑ์การคัดเลือกในรอบโควตา</p></div>`
+                            }
+
+                            <div class="grid grid-cols-1 gap-3 text-gray-600 text-sm mb-4">
+                                <div class="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 flex justify-between"><span>เลขประจำตัวสอบ</span><span class="font-bold text-gray-800">${currentUser.exam_id}</span></div>
+                                <div class="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 flex justify-between"><span>ลำดับที่ (คะแนนรวม)</span><span class="font-bold text-blue-600">#${currentUser.rank}</span></div>
+                            </div>
+
+                            <div class="border-t border-gray-100 pt-4">
+                                <p class="text-xs text-gray-400 font-bold mb-2 text-left">ลำดับการเลือกห้องเรียนโครงการ</p>
+                                <div class="grid ${isSecondary ? 'grid-cols-2' : 'grid-cols-3'} gap-2">
+                                    <div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center">
+                                        <span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 1</span>
+                                        <span class="text-sm font-bold text-gray-700 truncate block">${currentUser.choice_1 || '-'}</span>
+                                    </div>
+                                    <div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center">
+                                        <span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 2</span>
+                                        <span class="text-sm font-bold text-gray-700 truncate block">${currentUser.choice_2 || '-'}</span>
+                                    </div>
+                                    ${!isSecondary ? `
+                                    <div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center">
+                                        <span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 3</span>
+                                        <span class="text-sm font-bold text-gray-700 truncate block">${currentUser.choice_3 || '-'}</span>
+                                    </div>` : ''}
+                                </div>
+                            </div>
+
+                        </div>
+                   </div>
+                </div>
+                
+                <h3 class="text-gray-600 font-bold text-lg mb-4 ml-2 flex items-center gap-2">คะแนนรายวิชา</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                   <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2 relative overflow-hidden group hover:shadow-md transition-shadow">
+                        <div class="absolute right-0 top-0 w-16 h-16 bg-blue-50 rounded-bl-full -mr-2 -mt-2 transition-transform group-hover:scale-110"></div>
+                        <div class="flex justify-between items-center mb-1 relative z-10"><span class="text-gray-600 text-xs font-bold uppercase tracking-wider">วิทยาศาสตร์</span><span class="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">เต็ม ${maxSci}</span></div>
+                        <div class="flex justify-between items-end relative z-10"><span class="text-3xl font-bold text-gray-800">${sSci}</span><span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">ร้อยละ ${pSci.toFixed(1)}</span></div>
+                        <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden mt-3 relative z-10"><div class="bg-blue-400 h-2 rounded-full" style="width: ${pSci}%"></div></div>
+                   </div>
+                   <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2 relative overflow-hidden group hover:shadow-md transition-shadow">
+                        <div class="absolute right-0 top-0 w-16 h-16 bg-red-50 rounded-bl-full -mr-2 -mt-2 transition-transform group-hover:scale-110"></div>
+                        <div class="flex justify-between items-center mb-1 relative z-10"><span class="text-gray-600 text-xs font-bold uppercase tracking-wider">คณิตศาสตร์</span><span class="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">เต็ม ${maxMath}</span></div>
+                        <div class="flex justify-between items-end relative z-10"><span class="text-3xl font-bold text-gray-800">${sMath}</span><span class="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded-lg">ร้อยละ ${pMath.toFixed(1)}</span></div>
+                        <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden mt-3 relative z-10"><div class="bg-red-400 h-2 rounded-full" style="width: ${pMath}%"></div></div>
+                   </div>
+                   <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2 relative overflow-hidden group hover:shadow-md transition-shadow">
+                        <div class="absolute right-0 top-0 w-16 h-16 bg-purple-50 rounded-bl-full -mr-2 -mt-2 transition-transform group-hover:scale-110"></div>
+                        <div class="flex justify-between items-center mb-1 relative z-10"><span class="text-gray-600 text-xs font-bold uppercase tracking-wider">ภาษาอังกฤษ</span><span class="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">เต็ม ${maxEng}</span></div>
+                        <div class="flex justify-between items-end relative z-10"><span class="text-3xl font-bold text-gray-800">${sEng}</span><span class="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded-lg">ร้อยละ ${pEng.toFixed(1)}</span></div>
+                        <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden mt-3 relative z-10"><div class="bg-purple-400 h-2 rounded-full" style="width: ${pEng}%"></div></div>
+                   </div>
+                </div>
+
+                 <div class="bg-gradient-to-br from-amber-50 via-orange-50 to-white rounded-3xl p-6 border border-amber-100 text-center relative overflow-hidden shadow-sm">
+                    <div class="absolute top-0 left-0 w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9IiNmYmJmMjQiIGZpbGwtb3BhY2l0eT0iMC4yIi8+PC9zdmc+')] opacity-30"></div>
+                    <div class="relative z-10 flex flex-col items-center">
+                        <p class="text-amber-700 font-bold uppercase tracking-widest text-xs mb-2">คะแนนรวม 3 วิชา (เต็ม ${maxTotal})</p>
+                        <div class="flex items-baseline gap-2"><p class="text-5xl font-black text-amber-500 drop-shadow-sm tracking-tight">${sTotal.toFixed(2)}</p></div>
+                        <span class="text-xs font-bold text-amber-700 bg-amber-100/50 px-4 py-1.5 rounded-full mt-3 border border-amber-200">คิดเป็นร้อยละ ${((sTotal/maxTotal)*100).toFixed(1)}</span>
+                    </div>
+                 </div>
+                 
+                 <div class="mt-8 mb-4 text-center border-t border-gray-200/50 pt-4">
+                    <p class="text-xs text-gray-400 font-medium">พัฒนาระบบโดย ครูอานนท์ เมืองแก้ว</p>
+                 </div>
+             </div>
+          </div>
+       `;
     }
 
     const dataHandler = { onDataChanged(data) { 
