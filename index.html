@@ -128,28 +128,64 @@ return { isOk: false, error: { message: res.message } };
 <div class="overflow-y-auto p-4 md:p-8 flex-1 bg-white">
 
 <div id="view-single" class="block pb-20 md:pb-0">
-<form id="student-form" onsubmit="handleSingleSubmit(event)">
-<input type="hidden" id="student-backend-id">
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
-<div><label class="block text-gray-500 text-xs font-bold mb-2 uppercase">เลขบัตรประชาชน (13 หลัก)</label><input type="text" id="form-national-id" class="w-full px-4 py-3 rounded-xl border-gray-200 focus:border-lime-400 input-field" placeholder="00xxxxxxxxxxx" required></div>
-<div><label class="block text-gray-500 text-xs font-bold mb-2 uppercase">รหัสประจำตัวสอบ</label><input type="text" id="form-exam-id" class="w-full px-4 py-3 rounded-xl border-gray-200 input-field" required></div>
-<div><label class="block text-gray-500 text-xs font-bold mb-2 uppercase">ระดับชั้น</label><select id="form-grade" class="w-full px-4 py-3 rounded-xl border-gray-200 input-field bg-white"><option value="p4">ประถมศึกษาปีที่ 4</option><option value="p5">ประถมศึกษาปีที่ 5</option><option value="p6">ประถมศึกษาปีที่ 6</option><option value="m3">มัธยมศึกษาปีที่ 3</option></select></div>
-<div><label class="block text-gray-500 text-xs font-bold mb-2 uppercase">ชื่อ-นามสกุล</label><input type="text" id="form-name" class="w-full px-4 py-3 rounded-xl border-gray-200 input-field" required></div>
-<div class="md:col-span-2"><label class="block text-gray-500 text-xs font-bold mb-2 uppercase">โรงเรียนปัจจุบัน</label><input type="text" id="form-school" class="w-full px-4 py-3 rounded-xl border-gray-200 input-field"></div>
-</div>
-<div id="score-section" class="bg-amber-50/50 p-4 md:p-6 rounded-2xl border border-amber-100">
-<h3 class="text-sm font-bold text-amber-600 mb-4 uppercase">คะแนนสอบ</h3>
-<div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-<div><label class="text-xs text-gray-500 font-semibold">วิทยาศาสตร์ (40)</label><input type="number" step="0.01" id="score-science" class="w-full px-3 py-2 rounded-lg border-gray-200 text-center font-bold text-lime-600 input-field"></div>
-<div><label class="text-xs text-gray-500 font-semibold">คณิตศาสตร์ (30)</label><input type="number" step="0.01" id="score-math" class="w-full px-3 py-2 rounded-lg border-gray-200 text-center font-bold text-lime-600 input-field"></div>
-<div><label class="text-xs text-gray-500 font-semibold">ภาษาอังกฤษ (30)</label><input type="number" step="0.01" id="score-english" class="w-full px-3 py-2 rounded-lg border-gray-200 text-center font-bold text-lime-600 input-field"></div>
-</div>
-</div>
-<div class="flex justify-end pt-6 gap-3 md:relative fixed bottom-0 left-0 w-full bg-white p-4 border-t border-gray-100 md:border-0 md:bg-transparent md:p-0 z-10">
-<button type="button" onclick="closeModal()" class="flex-1 md:flex-none px-6 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold">ยกเลิก</button>
-<button type="submit" class="flex-1 md:flex-none px-8 py-3 btn-primary rounded-xl font-bold shadow-lg shadow-amber-200/50">บันทึก</button>
-</div>
-</form>
+  <form id="student-form" onsubmit="handleSingleSubmit(event)">
+    <input type="hidden" id="student-backend-id">
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-4">
+      <div><label class="block text-gray-500 text-xs font-bold mb-2 uppercase">เลขบัตรประชาชน (13 หลัก)</label><input type="text" id="form-national-id" class="w-full px-4 py-3 rounded-xl border-gray-200 focus:border-lime-400 input-field" placeholder="00xxxxxxxxxxx" required></div>
+      <div><label class="block text-gray-500 text-xs font-bold mb-2 uppercase">รหัสประจำตัวสอบ</label><input type="text" id="form-exam-id" class="w-full px-4 py-3 rounded-xl border-gray-200 input-field" required></div>
+      <div><label class="block text-gray-500 text-xs font-bold mb-2 uppercase">ระดับชั้น</label><select id="form-grade" class="w-full px-4 py-3 rounded-xl border-gray-200 input-field bg-white"><option value="p4">ประถมศึกษาปีที่ 4</option><option value="p5">ประถมศึกษาปีที่ 5</option><option value="p6">ประถมศึกษาปีที่ 6</option><option value="m1">มัธยมศึกษาปีที่ 1</option><option value="m3">มัธยมศึกษาปีที่ 3</option><option value="m4">มัธยมศึกษาปีที่ 4</option></select></div>
+      <div><label class="block text-gray-500 text-xs font-bold mb-2 uppercase">ชื่อ-นามสกุล</label><input type="text" id="form-name" class="w-full px-4 py-3 rounded-xl border-gray-200 input-field" required></div>
+      <div class="md:col-span-2"><label class="block text-gray-500 text-xs font-bold mb-2 uppercase">โรงเรียนปัจจุบัน</label><input type="text" id="form-school" class="w-full px-4 py-3 rounded-xl border-gray-200 input-field"></div>
+    </div>
+
+    <div class="bg-lime-50/50 p-4 rounded-2xl border border-lime-100 mb-4">
+      <h3 class="text-sm font-bold text-lime-700 mb-3 uppercase flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+        ลำดับโครงการที่เลือก
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div>
+          <label class="text-[10px] text-gray-500 font-bold uppercase mb-1 block">อันดับ 1</label>
+          <select id="form-choice-1" class="w-full px-3 py-2 rounded-lg border-gray-200 text-sm input-field bg-white">
+            <option value="">- ไม่ระบุ -</option>
+            <optgroup label="ม.1"><option value="S&M">S&M</option><option value="GATE">GATE</option><option value="EIS">EIS</option></optgroup>
+            <optgroup label="ม.4"><option value="SME">SME</option><option value="GATE">GATE</option></optgroup>
+          </select>
+        </div>
+        <div>
+          <label class="text-[10px] text-gray-500 font-bold uppercase mb-1 block">อันดับ 2</label>
+          <select id="form-choice-2" class="w-full px-3 py-2 rounded-lg border-gray-200 text-sm input-field bg-white">
+            <option value="">- ไม่ระบุ -</option>
+            <optgroup label="ม.1"><option value="S&M">S&M</option><option value="GATE">GATE</option><option value="EIS">EIS</option></optgroup>
+            <optgroup label="ม.4"><option value="SME">SME</option><option value="GATE">GATE</option></optgroup>
+          </select>
+        </div>
+        <div>
+          <label class="text-[10px] text-gray-500 font-bold uppercase mb-1 block">อันดับ 3</label>
+          <select id="form-choice-3" class="w-full px-3 py-2 rounded-lg border-gray-200 text-sm input-field bg-white">
+             <option value="">- ไม่ระบุ -</option>
+             <optgroup label="ม.1"><option value="S&M">S&M</option><option value="GATE">GATE</option><option value="EIS">EIS</option></optgroup>
+             <optgroup label="ม.4"><option value="SME">SME</option><option value="GATE">GATE</option></optgroup>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div id="score-section" class="bg-amber-50/50 p-4 md:p-6 rounded-2xl border border-amber-100">
+      <h3 class="text-sm font-bold text-amber-600 mb-4 uppercase">คะแนนสอบ</h3>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+        <div><label class="text-xs text-gray-500 font-semibold">วิทยาศาสตร์ (40)</label><input type="number" step="0.01" id="score-science" class="w-full px-3 py-2 rounded-lg border-gray-200 text-center font-bold text-lime-600 input-field"></div>
+        <div><label class="text-xs text-gray-500 font-semibold">คณิตศาสตร์ (30)</label><input type="number" step="0.01" id="score-math" class="w-full px-3 py-2 rounded-lg border-gray-200 text-center font-bold text-lime-600 input-field"></div>
+        <div><label class="text-xs text-gray-500 font-semibold">ภาษาอังกฤษ (30)</label><input type="number" step="0.01" id="score-english" class="w-full px-3 py-2 rounded-lg border-gray-200 text-center font-bold text-lime-600 input-field"></div>
+      </div>
+    </div>
+
+    <div class="flex justify-end pt-6 gap-3 md:relative fixed bottom-0 left-0 w-full bg-white p-4 border-t border-gray-100 md:border-0 md:bg-transparent md:p-0 z-10">
+      <button type="button" onclick="closeModal()" class="flex-1 md:flex-none px-6 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold">ยกเลิก</button>
+      <button type="submit" class="flex-1 md:flex-none px-8 py-3 btn-primary rounded-xl font-bold shadow-lg shadow-amber-200/50">บันทึก</button>
+    </div>
+  </form>
 </div>
 
 <div id="view-multiple" class="hidden h-full flex flex-col">
@@ -486,9 +522,81 @@ function renderStudentView() {
 
 function switchAddTab(tabName) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(`tab-${tabName}`).classList.add('active'); ['single','multiple','excel','score'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden')); document.getElementById(`view-${tabName}`).classList.remove('hidden'); if(tabName==='multiple') { document.getElementById('multiple-tbody').innerHTML=''; addMultipleRow(); } }
 function showAddStudentForm() { formMode = 'create'; document.getElementById('modal-title').textContent = 'เพิ่มผู้เข้าสอบใหม่'; document.getElementById('add-mode-tabs').classList.remove('hidden'); document.getElementById('score-section').classList.add('hidden'); switchAddTab('single'); document.getElementById('student-form').reset(); openModal(); }
-function showEditForm(id) { formMode = 'update'; document.getElementById('modal-title').textContent = 'แก้ไขข้อมูล'; document.getElementById('add-mode-tabs').classList.add('hidden'); ['single','multiple','excel','score'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden')); document.getElementById('view-single').classList.remove('hidden'); document.getElementById('score-section').classList.remove('hidden'); const s = studentsData.find(x => x.__backendId === id); if(!s) return; document.getElementById('student-backend-id').value = s.__backendId; document.getElementById('form-national-id').value = s.national_id || ''; document.getElementById('form-exam-id').value = s.exam_id; document.getElementById('form-grade').value = s.grade_level; document.getElementById('form-name').value = s.full_name; document.getElementById('form-school').value = s.previous_school; document.getElementById('score-science').value = s.science_score; document.getElementById('score-math').value = s.math_score; document.getElementById('score-english').value = s.english_score; openModal(); }
+function showEditForm(id) {
+    formMode = 'update';
+    document.getElementById('modal-title').textContent = 'แก้ไขข้อมูล';
+    document.getElementById('add-mode-tabs').classList.add('hidden');
+    ['single','multiple','excel','score'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
+    document.getElementById('view-single').classList.remove('hidden');
+    document.getElementById('score-section').classList.remove('hidden');
+    
+    const s = studentsData.find(x => x.__backendId === id);
+    if(!s) return;
+    
+    document.getElementById('student-backend-id').value = s.__backendId;
+    document.getElementById('form-national-id').value = s.national_id || '';
+    document.getElementById('form-exam-id').value = s.exam_id;
+    document.getElementById('form-grade').value = s.grade_level;
+    document.getElementById('form-name').value = s.full_name;
+    document.getElementById('form-school').value = s.previous_school;
+    
+    // -- เพิ่มส่วนดึงข้อมูลโครงการ --
+    document.getElementById('form-choice-1').value = s.choice_1 || '';
+    document.getElementById('form-choice-2').value = s.choice_2 || '';
+    document.getElementById('form-choice-3').value = s.choice_3 || '';
+    // -------------------------
 
-function handleSingleSubmit(e) { e.preventDefault(); const scores = [0, parseFloat(document.getElementById('score-math').value)||0, parseFloat(document.getElementById('score-science').value)||0, parseFloat(document.getElementById('score-english').value)||0, 0]; const data = { exam_id: document.getElementById('form-exam-id').value, national_id: document.getElementById('form-national-id').value, grade_level: document.getElementById('form-grade').value, full_name: document.getElementById('form-name').value, previous_school: document.getElementById('form-school').value, thai_score: scores[0], math_score: scores[1], science_score: scores[2], english_score: scores[3], aptitude_score: scores[4], total_score: scores.reduce((a,b)=>a+b,0) }; showLoading('กำลังบันทึก...'); const action = formMode === 'create' ? window.dataSdk.create(data) : (data.__backendId = document.getElementById('student-backend-id').value, window.dataSdk.update(data)); action.then(res => { setTimeout(() => { hideLoading(); if(res.isOk) { closeModal(); showAlert('สำเร็จ', 'บันทึกเรียบร้อย'); } else { showAlert('ผิดพลาด', res.error.message); } }, 500); }); }
+    document.getElementById('score-science').value = s.science_score;
+    document.getElementById('score-math').value = s.math_score;
+    document.getElementById('score-english').value = s.english_score;
+    
+    openModal();
+}
+
+function handleSingleSubmit(e) {
+    e.preventDefault();
+    const scores = [
+        0, 
+        parseFloat(document.getElementById('score-math').value)||0, 
+        parseFloat(document.getElementById('score-science').value)||0, 
+        parseFloat(document.getElementById('score-english').value)||0, 
+        0
+    ];
+    
+    const data = {
+        exam_id: document.getElementById('form-exam-id').value,
+        national_id: document.getElementById('form-national-id').value,
+        grade_level: document.getElementById('form-grade').value,
+        full_name: document.getElementById('form-name').value,
+        previous_school: document.getElementById('form-school').value,
+        // -- เพิ่มส่วนบันทึกข้อมูลโครงการ --
+        choice_1: document.getElementById('form-choice-1').value,
+        choice_2: document.getElementById('form-choice-2').value,
+        choice_3: document.getElementById('form-choice-3').value,
+        // -----------------------------
+        thai_score: scores[0],
+        math_score: scores[1],
+        science_score: scores[2],
+        english_score: scores[3],
+        aptitude_score: scores[4],
+        total_score: scores.reduce((a,b)=>a+b,0)
+    };
+    
+    showLoading('กำลังบันทึก...');
+    const action = formMode === 'create' ? window.dataSdk.create(data) : (data.__backendId = document.getElementById('student-backend-id').value, window.dataSdk.update(data));
+    
+    action.then(res => {
+        setTimeout(() => {
+            hideLoading();
+            if(res.isOk) {
+                closeModal();
+                showAlert('สำเร็จ', 'บันทึกเรียบร้อย');
+            } else {
+                showAlert('ผิดพลาด', res.error.message);
+            }
+        }, 500);
+    });
+}
 function addMultipleRow() { const tr = document.createElement('tr'); tr.className = 'bg-white border-b hover:bg-gray-50'; tr.innerHTML = `<td class="p-2"><input type="text" class="w-full border rounded px-2 py-1 multi-national-id text-xs" placeholder="บัตรฯ"></td><td class="p-2"><input type="text" class="w-full border rounded px-2 py-1 multi-exam-id text-xs" placeholder="รหัส"></td><td class="p-2"><input type="text" class="w-full border rounded px-2 py-1 multi-name text-xs" placeholder="ชื่อ"></td><td class="p-2"><select class="w-full border rounded px-2 py-1 multi-grade text-xs"><option value="p6">ป.6</option><option value="p5">ป.5</option><option value="p4">ป.4</option><option value="m3">ม.3</option></select></td><td class="p-2"><input type="text" class="w-full border rounded px-2 py-1 multi-school text-xs" placeholder="รร."></td><td class="p-2 text-center"><button type="button" onclick="this.closest('tr').remove()" class="text-red-500 font-bold">x</button></td>`; document.getElementById('multiple-tbody').appendChild(tr); }
 function handleMultipleSubmit() { const rows = document.querySelectorAll('#multiple-tbody tr'); const bulkData = []; rows.forEach(row => { const nid = row.querySelector('.multi-national-id').value.trim(); const id = row.querySelector('.multi-exam-id').value.trim(); const name = row.querySelector('.multi-name').value.trim(); if(id && name) bulkData.push({ exam_id: id, national_id: nid, full_name: name, grade_level: row.querySelector('.multi-grade').value, previous_school: row.querySelector('.multi-school').value.trim(), thai_score:0, math_score:0, science_score:0, english_score:0, aptitude_score:0, total_score:0, rank:0 }); }); if(bulkData.length === 0) return showAlert('แจ้งเตือน', 'กรุณากรอกข้อมูลอย่างน้อย 1 รายการ'); showConfirm('ยืนยัน', `เพิ่ม ${bulkData.length} รายการ?`, () => { showLoading('กำลังบันทึก...'); window.dataSdk.createBulk(bulkData).then(res => { setTimeout(() => { hideLoading(); if(res.isOk) { closeModal(); showAlert('สำเร็จ', 'บันทึกเรียบร้อย'); } else { showAlert('ผิดพลาด', res.error.message); } }, 500); }); }); }
 function handleExcelUpload(input, type) {
