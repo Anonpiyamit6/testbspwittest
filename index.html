@@ -4,11 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ระบบประกาศผลคะแนน</title>
-  
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
-  
   <style>
     body { box-sizing: border-box; font-family: 'Sarabun', sans-serif; background-color: #f0fdf4; color: #4b5563; -webkit-tap-highlight-color: transparent; }
     .gradient-bg { background-color: #C6E686; } 
@@ -26,7 +24,6 @@
     .tab-btn { border-bottom: 3px solid transparent; color: #9ca3af; padding: 12px 16px; transition: all 0.2s; white-space: nowrap; cursor: pointer; }
     .tab-btn.active { border-bottom: 3px solid #84cc16; color: #4d7c0f; font-weight: bold; background-color: #f7fee7; }
   </style>
-
   <script>
     // ===========================================================
     // ⚠️ 1. วาง URL จาก Google Apps Script ตรงนี้ ⚠️
@@ -275,28 +272,32 @@
 
     function showAddStudentForm() { formMode = 'create'; document.getElementById('modal-title').textContent = 'เพิ่มผู้เข้าสอบใหม่'; document.getElementById('student-form').reset(); document.getElementById('add-mode-tabs').classList.remove('hidden'); document.getElementById('score-section').classList.add('hidden'); switchAddTab('single'); updateChoiceOptions(); openModal(); }
     
-    // --- FIX: Show Edit Form (Map grade properly) ---
     function showEditForm(id) { 
         formMode = 'update'; document.getElementById('modal-title').textContent = 'แก้ไขข้อมูล'; document.getElementById('add-mode-tabs').classList.add('hidden'); ['single','multiple','excel','score'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden')); document.getElementById('view-single').classList.remove('hidden'); document.getElementById('score-section').classList.remove('hidden'); 
         const s = studentsData.find(x => x.__backendId === id); if(!s) return; 
         document.getElementById('student-backend-id').value = s.__backendId; document.getElementById('form-national-id').value = s.national_id || ''; document.getElementById('form-exam-id').value = s.exam_id; 
         
-        // Map grade text to value
-        const gradeMap = {
-            'ประถมศึกษาปีที่ 4': 'p4', 'p4': 'p4',
-            'ประถมศึกษาปีที่ 5': 'p5', 'p5': 'p5',
-            'ประถมศึกษาปีที่ 6': 'p6', 'p6': 'p6',
-            'มัธยมศึกษาปีที่ 3': 'm3', 'm3': 'm3'
-        };
-        const formGrade = gradeMap[s.grade_level.trim()] || 'p6'; 
+        // Map grade properly
+        const rawG = s.grade_level.trim();
+        let formGrade = 'p6'; // default
+        if(rawG.includes('4')) formGrade = 'p4';
+        else if(rawG.includes('5')) formGrade = 'p5';
+        else if(rawG.includes('6')) formGrade = 'p6';
+        else if(rawG.includes('3') || rawG.includes('มัธยม')) formGrade = 'm3';
         document.getElementById('form-grade').value = formGrade;
 
         document.getElementById('form-name').value = s.full_name; document.getElementById('form-school').value = s.previous_school; 
         document.getElementById('score-science').value = s.science_score; document.getElementById('score-math').value = s.math_score; document.getElementById('score-english').value = s.english_score; 
         
-        // Call update options then set values
         updateChoiceOptions(); 
-        setTimeout(() => { if(s.choice_1) document.getElementById('form-choice-1').value = s.choice_1; if(s.choice_2) document.getElementById('form-choice-2').value = s.choice_2; if(s.choice_3) document.getElementById('form-choice-3').value = s.choice_3; }, 50); 
+        
+        // FIX: Force set value after options generated
+        setTimeout(() => { 
+            if(s.choice_1) document.getElementById('form-choice-1').value = s.choice_1.trim(); 
+            if(s.choice_2) document.getElementById('form-choice-2').value = s.choice_2.trim(); 
+            if(s.choice_3) document.getElementById('form-choice-3').value = s.choice_3.trim(); 
+        }, 100); 
+        
         openModal(); 
     }
     
