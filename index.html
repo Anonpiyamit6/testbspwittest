@@ -595,8 +595,18 @@
 
        const thaiGrade = getThaiGrade(currentUser.grade_level);
        
-       // ตรวจสอบว่าเป็น ม.3 หรือ ม.4 (เพื่อใช้ Logic ของ ม.ปลาย)
-       const isSecondary = ['m3', 'm4'].includes(currentUser.grade_level.toLowerCase());
+       // --- แก้ไข Logic การตรวจสอบระดับชั้น ---
+       const rawGrade = String(currentUser.grade_level).toLowerCase(); // แปลงเป็นตัวเล็กเพื่อตรวจสอบง่ายๆ
+       
+       // เช็คว่าเป็น ป.4 หรือ ป.5 หรือไม่ (รองรับทั้งรหัส 'p4' และชื่อไทย 'ประถมศึกษาปีที่ 4')
+       const isP4 = rawGrade.includes('p4') || rawGrade.includes('ประถมศึกษาปีที่ 4');
+       const isP5 = rawGrade.includes('p5') || rawGrade.includes('ประถมศึกษาปีที่ 5');
+       
+       // ตัวแปรตัดสินใจ: จะแสดงส่วนเลือกโครงการหรือไม่? (แสดงเมื่อ ไม่ใช่ P4 และ ไม่ใช่ P5)
+       const shouldShowChoices = !isP4 && !isP5; 
+       
+       // เช็คว่าเป็นมัธยมหรือไม่ (เพื่อปรับ Grid)
+       const isSecondary = rawGrade.includes('m3') || rawGrade.includes('มัธยม');
 
        document.getElementById('app').innerHTML = `
           <div class="h-full bg-[#fdfbf7] overflow-auto">
@@ -621,9 +631,10 @@
                             <h2 class="text-2xl font-bold text-gray-800 mb-1">${currentUser.full_name}</h2>
                             <p class="text-lime-600 font-medium mb-4 text-sm">${thaiGrade}</p>
                             
-                            ${currentUser.admission_result 
+                            ${shouldShowChoices ? (currentUser.admission_result 
                                 ? `<div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl text-center"><p class="text-green-800 font-bold text-lg">ขอแสดงความยินดี</p><p class="text-green-600">ผ่านการคัดเลือกเข้าศึกษาต่อโครงการ <span class="font-bold text-xl block mt-1">${currentUser.admission_result}</span></p></div>` 
-                                : `<div class="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-xl text-center"><p class="text-gray-500">ยังไม่ผ่านเกณฑ์การคัดเลือกในรอบโควตา</p></div>`
+                                : `<div class="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-xl text-center"><p class="text-gray-500">ยังไม่ผ่านเกณฑ์การคัดเลือกในรอบโควตา</p></div>`) 
+                                : ''
                             }
 
                             <div class="grid grid-cols-1 gap-3 text-gray-600 text-sm mb-4">
@@ -631,9 +642,9 @@
                                 <div class="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 flex justify-between"><span>ลำดับที่ (คะแนนรวม)</span><span class="font-bold text-blue-600">#${currentUser.rank}</span></div>
                             </div>
 
+                            ${shouldShowChoices ? `
                             <div class="border-t border-gray-100 pt-4">
                                 <p class="text-xs text-gray-400 font-bold mb-2 text-left">ลำดับการเลือกห้องเรียนโครงการ</p>
-                                
                                 <div class="grid ${isSecondary ? 'grid-cols-2' : 'grid-cols-3'} gap-2">
                                     <div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center">
                                         <span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 1</span>
@@ -643,7 +654,6 @@
                                         <span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 2</span>
                                         <span class="text-sm font-bold text-gray-700 truncate block">${currentUser.choice_2 || '-'}</span>
                                     </div>
-                                    
                                     ${!isSecondary ? `
                                     <div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center">
                                         <span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 3</span>
@@ -651,27 +661,23 @@
                                     </div>` : ''}
                                 </div>
                             </div>
-
-                        </div>
+                            ` : ''} </div>
                    </div>
                 </div>
                 
                 <h3 class="text-gray-600 font-bold text-lg mb-4 ml-2 flex items-center gap-2">คะแนนรายวิชา</h3>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2 relative overflow-hidden group hover:shadow-md transition-shadow">
-                        <div class="absolute right-0 top-0 w-16 h-16 bg-blue-50 rounded-bl-full -mr-2 -mt-2 transition-transform group-hover:scale-110"></div>
                         <div class="flex justify-between items-center mb-1 relative z-10"><span class="text-gray-600 text-xs font-bold uppercase tracking-wider">วิทยาศาสตร์</span><span class="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">เต็ม ${maxSci}</span></div>
                         <div class="flex justify-between items-end relative z-10"><span class="text-3xl font-bold text-gray-800">${sSci}</span><span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">ร้อยละ ${pSci.toFixed(1)}</span></div>
                         <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden mt-3 relative z-10"><div class="bg-blue-400 h-2 rounded-full" style="width: ${pSci}%"></div></div>
                    </div>
                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2 relative overflow-hidden group hover:shadow-md transition-shadow">
-                        <div class="absolute right-0 top-0 w-16 h-16 bg-red-50 rounded-bl-full -mr-2 -mt-2 transition-transform group-hover:scale-110"></div>
                         <div class="flex justify-between items-center mb-1 relative z-10"><span class="text-gray-600 text-xs font-bold uppercase tracking-wider">คณิตศาสตร์</span><span class="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">เต็ม ${maxMath}</span></div>
                         <div class="flex justify-between items-end relative z-10"><span class="text-3xl font-bold text-gray-800">${sMath}</span><span class="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded-lg">ร้อยละ ${pMath.toFixed(1)}</span></div>
                         <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden mt-3 relative z-10"><div class="bg-red-400 h-2 rounded-full" style="width: ${pMath}%"></div></div>
                    </div>
                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2 relative overflow-hidden group hover:shadow-md transition-shadow">
-                        <div class="absolute right-0 top-0 w-16 h-16 bg-purple-50 rounded-bl-full -mr-2 -mt-2 transition-transform group-hover:scale-110"></div>
                         <div class="flex justify-between items-center mb-1 relative z-10"><span class="text-gray-600 text-xs font-bold uppercase tracking-wider">ภาษาอังกฤษ</span><span class="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">เต็ม ${maxEng}</span></div>
                         <div class="flex justify-between items-end relative z-10"><span class="text-3xl font-bold text-gray-800">${sEng}</span><span class="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded-lg">ร้อยละ ${pEng.toFixed(1)}</span></div>
                         <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden mt-3 relative z-10"><div class="bg-purple-400 h-2 rounded-full" style="width: ${pEng}%"></div></div>
