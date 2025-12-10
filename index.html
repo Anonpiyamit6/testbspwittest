@@ -41,10 +41,12 @@
 
     let currentUser = null, currentView = 'login', adminTab = 'm1', studentsData = [], searchQuery = '', formMode = 'create', excelDataCache = [], scoreDataCache = [], confirmCallback = null, isSidebarOpen = false, checkedIds = new Set();
 
+    // --- Helpers ---
     function getThaiGrade(code) { const map = { 'p4': 'ประถมศึกษาปีที่ 4', 'p5': 'ประถมศึกษาปีที่ 5', 'p6': 'ประถมศึกษาปีที่ 6', 'm3': 'มัธยมศึกษาปีที่ 3' }; return map[String(code).toLowerCase()] || code; }
     function toggleSidebar() { const sb=document.getElementById('sidebar'), ov=document.getElementById('sidebar-overlay'); isSidebarOpen=!isSidebarOpen; if(isSidebarOpen){sb.classList.remove('-translate-x-full');ov.classList.remove('hidden');}else{sb.classList.add('-translate-x-full');ov.classList.add('hidden');} }
     async function callApi(action, data = {}) { const body = JSON.stringify({ action, ...data }); const response = await fetch(API_URL, { method: 'POST', body: body, headers: { "Content-Type": "text/plain;charset=utf-8" } }); return await response.json(); }
 
+    // --- Data SDK ---
     window.dataSdk = {
       init: async (handler) => { window.dataSdkHandler = handler; await window.dataSdk.refresh(); return { isOk: true }; },
       refresh: async () => { 
@@ -73,6 +75,7 @@
 
     function render() { const app = document.getElementById('app'); if(currentView === 'login') renderLogin(); else if(currentView === 'admin') renderAdminDashboard(); else if(currentView === 'student' && currentUser) { const u = studentsData.find(s => String(s.national_id) === String(currentUser.national_id)); if(u) currentUser = u; renderStudentView(); } }
 
+    // --- 1. LOGIN ---
     function renderLogin() {
       document.getElementById('app').innerHTML = `
         <div class="h-full w-full bg-[#B2B2B2] flex flex-col items-center justify-center p-4 overflow-auto">
@@ -105,9 +108,7 @@
         </div>`;
     }
 
-    // --------------------------------------------------------
-    // ส่วนหน้าแสดงผลผู้เข้าสอบ (Student View)
-    // --------------------------------------------------------
+    // --- 2. STUDENT VIEW ---
     function renderStudentView() {
        if(!currentUser) return;
        const maxSci = 40; const maxMath = 30; const maxEng = 30; const maxTotal = 100;
@@ -119,7 +120,7 @@
        const isP4 = rawGrade.includes('p4') || rawGrade.includes('ประถมศึกษาปีที่ 4');
        const isP5 = rawGrade.includes('p5') || rawGrade.includes('ประถมศึกษาปีที่ 5');
        const isPreTest = isP4 || isP5; 
-       const isSecondary = rawGrade.includes('m3') || rawGrade.includes('มัธยม'); 
+       const isSecondary = rawGrade.includes('m3') || rawGrade.includes('มัธยม');
        const shouldShowChoices = !isPreTest; 
 
        document.getElementById('app').innerHTML = `
@@ -179,7 +180,7 @@
           </div>`;
     }
 
-    // --- ADMIN DASHBOARD ---
+    // --- 3. ADMIN DASHBOARD ---
     function renderAdminDashboard() {
       const m1 = studentsData.filter(s => ['p4','p5','p6','m1'].includes(s.grade_level.toLowerCase()));
       const m4 = studentsData.filter(s => ['m3','m4'].includes(s.grade_level.toLowerCase()));
@@ -263,42 +264,29 @@
 
     function switchAddTab(tabName) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(`tab-${tabName}`).classList.add('active'); ['single','multiple','excel','score'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden')); document.getElementById(`view-${tabName}`).classList.remove('hidden'); if(tabName==='multiple') { document.getElementById('multiple-tbody').innerHTML=''; addMultipleRow(); } }
     
-    // --- Logic สร้างตัวเลือก (อัปเดตใหม่ รองรับ ม.4 -> m3) ---
     function updateChoiceOptions() {
         const grade = document.getElementById('form-grade').value;
         const choiceSection = document.getElementById('choice-section');
         const choice3Div = document.getElementById('div-choice-3');
         const choice3Select = document.getElementById('form-choice-3');
         if(!choiceSection) return;
-        
         if (['p4', 'p5'].includes(grade)) { choiceSection.classList.add('hidden'); document.getElementById('form-choice-1').value = ''; document.getElementById('form-choice-2').value = ''; choice3Select.value = ''; return; }
-        
         choiceSection.classList.remove('hidden');
         let options = [];
-        
-        if (grade === 'p6') { // ป.6 เข้า ม.1
-            options = ['S&M', 'GATE', 'EIS', 'ทั่วไป']; 
-            choice3Div.classList.remove('hidden'); 
-            choice3Select.innerHTML = '<option value="">- เลือก -</option>' + options.map(o => `<option value="${o}">${o}</option>`).join(''); 
-        } 
-        else { // m3 (เข้า ม.4)
-            options = ['SME', 'GATE']; 
-            choice3Div.classList.add('hidden'); 
-            choice3Select.value = ''; 
-        }
-        
+        if (grade === 'p6') { options = ['S&M', 'GATE', 'EIS', 'ทั่วไป']; choice3Div.classList.remove('hidden'); choice3Select.innerHTML = '<option value="">- เลือก -</option>' + options.map(o => `<option value="${o}">${o}</option>`).join(''); } 
+        else { options = ['SME', 'GATE']; choice3Div.classList.add('hidden'); choice3Select.value = ''; }
         ['form-choice-1', 'form-choice-2'].forEach(id => { document.getElementById(id).innerHTML = '<option value="">- เลือก -</option>' + options.map(o => `<option value="${o}">${o}</option>`).join(''); });
     }
 
     function showAddStudentForm() { formMode = 'create'; document.getElementById('modal-title').textContent = 'เพิ่มผู้เข้าสอบใหม่'; document.getElementById('student-form').reset(); document.getElementById('add-mode-tabs').classList.remove('hidden'); document.getElementById('score-section').classList.add('hidden'); switchAddTab('single'); updateChoiceOptions(); openModal(); }
     
-    // --- แก้ไขปัญหาเลือกโครงการไม่ขึ้น (ใช้ Logic บังคับจับคู่ระดับชั้น) ---
+    // --- Show Edit Form (Fixed Logic for M.4) ---
     function showEditForm(id) { 
         formMode = 'update'; document.getElementById('modal-title').textContent = 'แก้ไขข้อมูล'; document.getElementById('add-mode-tabs').classList.add('hidden'); ['single','multiple','excel','score'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden')); document.getElementById('view-single').classList.remove('hidden'); document.getElementById('score-section').classList.remove('hidden'); 
         const s = studentsData.find(x => x.__backendId === id); if(!s) return; 
         document.getElementById('student-backend-id').value = s.__backendId; document.getElementById('form-national-id').value = s.national_id || ''; document.getElementById('form-exam-id').value = s.exam_id; 
         
-        // แปลงระดับชั้น (เช่น มัธยมศึกษาปีที่ 3 -> m3) เพื่อให้ฟอร์มรู้จัก
+        // Map grade
         const rawG = s.grade_level.trim().toLowerCase();
         let formGrade = 'p6'; 
         if(rawG.includes('4') && (rawG.includes('m') || rawG.includes('ม'))) formGrade = 'm3'; 
@@ -306,16 +294,15 @@
         else if(rawG.includes('4')) formGrade = 'p4';
         else if(rawG.includes('5')) formGrade = 'p5';
         else if(rawG.includes('6')) formGrade = 'p6';
-        
         document.getElementById('form-grade').value = formGrade;
 
         document.getElementById('form-name').value = s.full_name; document.getElementById('form-school').value = s.previous_school; 
         document.getElementById('score-science').value = s.science_score; document.getElementById('score-math').value = s.math_score; document.getElementById('score-english').value = s.english_score; 
         
-        // 1. สร้างตัวเลือกก่อน
+        // 1. Build options first
         updateChoiceOptions(); 
         
-        // 2. ใส่ค่าที่บันทึกไว้ลงไป (Trim ช่องว่างทิ้งด้วย)
+        // 2. Set values after options are ready
         setTimeout(() => { 
             if(s.choice_1) document.getElementById('form-choice-1').value = s.choice_1.trim(); 
             if(s.choice_2) document.getElementById('form-choice-2').value = s.choice_2.trim(); 
