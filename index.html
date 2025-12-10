@@ -234,21 +234,46 @@
     function closeModal() { document.getElementById('student-modal').classList.add('hidden-force'); document.body.classList.remove('modal-active'); }
 
     // --- Options for Choices ---
+    // ฟังก์ชันอัปเดตตัวเลือกห้องเรียนโครงการ
     function updateChoiceOptions() {
         const grade = document.getElementById('form-grade').value;
+        
+        // ระบุ ID ของ Dropdown ทั้ง 3 อัน
         const choices = ['form-choice-1', 'form-choice-2', 'form-choice-3'];
+        
+        // หา Element พ่อ (div) ของอันดับ 3 เพื่อสั่งซ่อน/แสดง
+        const choice3Div = document.getElementById('form-choice-3').closest('div');
+        
         let options = [];
+        
+        // เช็คระดับชั้น
+        // ถ้าเป็นประถม (สอบเข้า ม.1) -> มี 3 อันดับ (S&M, GATE, EIS)
         if (['p4','p5','p6'].includes(grade)) {
             options = ['S&M', 'GATE', 'EIS', 'ทั่วไป'];
+            
+            // แสดงอันดับ 3
+            if(choice3Div) choice3Div.classList.remove('invisible');
+            
         } else {
+            // ถ้าเป็นมัธยม (สอบเข้า ม.4) -> มี 2 อันดับ (SME, GATE)
             options = ['SME', 'GATE', 'ทั่วไป'];
+            
+            // ซ่อนอันดับ 3 (ใช้ invisible เพื่อคง Layout ตารางไว้ไม่ให้เบี้ยว)
+            if(choice3Div) choice3Div.classList.add('invisible');
+            
+            // เคลียร์ค่าอันดับ 3 ทิ้ง (กันข้อมูลค้าง)
+            document.getElementById('form-choice-3').value = '';
         }
         
+        // อัปเดตตัวเลือกใน <option> ของทุก Dropdown
         choices.forEach(id => {
             const el = document.getElementById(id);
-            const currentVal = el.value;
+            const currentVal = el.value; // จำค่าเดิมไว้ก่อน
+            
             el.innerHTML = '<option value="">- เลือก -</option>' + options.map(o => `<option value="${o}">${o}</option>`).join('');
-            el.value = currentVal; // try to keep value
+            
+            // คืนค่าเดิมกลับไป (ถ้าค่าเดิมยังตรงกับตัวเลือกใหม่)
+            el.value = currentVal; 
         });
     }
 
