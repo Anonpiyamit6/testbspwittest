@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ระบบประกาศผลคะแนน</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+    
     <style>
         body { box-sizing: border-box; font-family: 'Sarabun', sans-serif; background-color: #f0fdf4; color: #4b5563; -webkit-tap-highlight-color: transparent; }
         .gradient-bg { background-color: #C6E686; } 
@@ -24,6 +26,7 @@
         .tab-btn { border-bottom: 3px solid transparent; color: #9ca3af; padding: 12px 16px; transition: all 0.2s; white-space: nowrap; cursor: pointer; }
         .tab-btn.active { border-bottom: 3px solid #84cc16; color: #4d7c0f; font-weight: bold; background-color: #f7fee7; }
     </style>
+
     <script>
         // ===========================================================
         // ⚠️ 1. วาง URL จาก Google Apps Script ตรงนี้ ⚠️
@@ -48,9 +51,6 @@
                     const res = await callApi('getAllStudents');
                     if (res.success) { 
                         let rawData = res.students.map(s => ({ ...s, __backendId: s.id })); 
-                        // ** ปิดระบบจัดอันดับชั่วคราว ตามคำสั่ง **
-                        // rawData = calculateAdmissions(rawData); 
-                        
                         // คำนวณ Rank ตามคะแนนรวม (วิชาการ + ปฏิบัติ)
                         const m1 = rawData.filter(s => ['p4','p5','p6','m1'].includes(s.grade_level.toLowerCase())).sort((a,b)=>b.total_score - a.total_score);
                         const m4 = rawData.filter(s => ['m3','m4'].includes(s.grade_level.toLowerCase())).sort((a,b)=>b.total_score - a.total_score);
@@ -105,24 +105,32 @@
                         </form>
                     </div>
                 </div>
+                <div class="mt-6 text-center animate-pulse"><p class="text-xs text-white font-medium drop-shadow-md bg-black/10 px-3 py-1 rounded-full">พัฒนาระบบโดย ครูอานนท์ เมืองแก้ว</p></div>
             </div>`;
         }
 
-        // --- Student View (Update: Show Practical Score) ---
+        // --- STUDENT VIEW (UPDATED LAYOUT) ---
         function renderStudentView() {
             if(!currentUser) return;
             const s = currentUser;
             const maxSci=40, maxMath=30, maxEng=30;
             const pSci=(s.science_score/maxSci)*100, pMath=(s.math_score/maxMath)*100, pEng=(s.english_score/maxEng)*100;
-            const thaiGrade = getThaiGrade(s.grade_level);
-            const rawGrade = String(s.grade_level).toLowerCase().trim();
-            const isPreTest = rawGrade.includes('p4') || rawGrade.includes('p5') || rawGrade.includes('ประถมศึกษาปีที่ 4') || rawGrade.includes('ประถมศึกษาปีที่ 5');
-            const isSecondary = rawGrade.includes('m3') || rawGrade.includes('มัธยม');
+            
+            // Grade Check
+            const rawG = String(s.grade_level).toLowerCase().trim();
+            const isPreTest = rawG.includes('p4') || rawG.includes('p5') || rawG.includes('ประถมศึกษาปีที่ 4') || rawG.includes('ประถมศึกษาปีที่ 5');
+            const isSecondary = rawG.includes('m3') || rawG.includes('มัธยม');
             const showChoices = !isPreTest;
 
-            // คะแนนรวม (วิชาการ 100 + ปฏิบัติ)
-            const academicScore = s.math_score + s.science_score + s.english_score;
-            const grandTotal = academicScore + (s.practical_score || 0);
+            // คะแนนรวม 3 วิชา
+            const academicTotal = s.math_score + s.science_score + s.english_score;
+            const practicalScore = s.practical_score || 0;
+            
+            // คำนวณ Max Score ตามโครงการ (S&M=20, อื่นๆ=100)
+            let maxPrac = 100;
+            if (s.choice_1 && s.choice_1.includes('S&M')) maxPrac = 20;
+            const maxGrandTotal = 100 + maxPrac;
+            const grandTotal = academicTotal + practicalScore;
 
             document.getElementById('app').innerHTML = `
             <div class="h-full bg-[#fdfbf7] overflow-auto">
@@ -137,15 +145,20 @@
                         </div>
                         <button onclick="currentView='login';render()" class="shrink-0 bg-white/80 backdrop-blur-sm text-red-500 hover:bg-red-500 hover:text-white px-4 py-2 rounded-full text-xs font-bold shadow-sm border border-red-100 ml-2">ออกจากระบบ</button>
                     </div>
+                    
                     <div class="bg-white rounded-[2rem] p-6 shadow-xl mb-6 relative overflow-hidden border border-lime-100">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-lime-50 rounded-full -mr-10 -mt-10 opacity-60"></div>
                         <div class="flex flex-col md:flex-row items-center gap-6 relative z-10">
                             <div class="flex-1 text-center md:text-left w-full">
                                 <h2 class="text-2xl font-bold text-gray-800 mb-1">${s.full_name}</h2>
-                                <p class="text-lime-600 font-medium mb-4 text-sm">${thaiGrade}</p>
+                                <p class="text-lime-600 font-medium mb-4 text-sm">${getThaiGrade(s.grade_level)}</p>
                                 
-                                <div class="grid grid-cols-1 gap-3 text-gray-600 text-sm mb-4">
+                                ${showChoices && s.admission_result ? `<div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl text-center"><p class="text-green-800 font-bold text-lg">ขอแสดงความยินดี</p><p class="text-green-600">ผ่านการคัดเลือกเข้าศึกษาต่อโครงการ <span class="font-bold text-xl block mt-1">${s.admission_result}</span></p></div>` : ''}
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-600 text-sm mb-4">
                                     <div class="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 flex justify-between"><span>เลขประจำตัวสอบ</span><span class="font-bold text-gray-800">${s.exam_id}</span></div>
-                                    <div class="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 flex justify-between"><span>คะแนนปฏิบัติ</span><span class="font-bold text-purple-600">${s.practical_score || 0} คะแนน</span></div>
+                                    <div class="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 flex justify-between"><span>โรงเรียนเดิม</span><span class="font-bold text-gray-800 truncate max-w-[150px]">${s.previous_school}</span></div>
+                                    <div class="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 flex justify-between md:col-span-2"><span>ลำดับที่ (คะแนนรวม)</span><span class="font-bold text-blue-600">#${s.rank}</span></div>
                                 </div>
 
                                 ${showChoices ? `
@@ -160,19 +173,31 @@
                         </div>
                     </div>
                     
-                    <h3 class="text-gray-600 font-bold text-lg mb-4 ml-2">คะแนนวิชาการ (เต็ม 100)</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <h3 class="text-gray-600 font-bold text-lg mb-4 ml-2">คะแนนรายวิชา (เต็ม 100)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2"><div class="flex justify-between items-center mb-1"><span class="text-gray-600 text-xs font-bold uppercase">วิทยาศาสตร์</span><span class="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">เต็ม ${maxSci}</span></div><div class="flex justify-between items-end"><span class="text-3xl font-bold text-gray-800">${s.science_score}</span><span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">ร้อยละ ${pSci.toFixed(1)}</span></div></div>
                         <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2"><div class="flex justify-between items-center mb-1"><span class="text-gray-600 text-xs font-bold uppercase">คณิตศาสตร์</span><span class="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">เต็ม ${maxMath}</span></div><div class="flex justify-between items-end"><span class="text-3xl font-bold text-gray-800">${s.math_score}</span><span class="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded-lg">ร้อยละ ${pMath.toFixed(1)}</span></div></div>
                         <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2"><div class="flex justify-between items-center mb-1"><span class="text-gray-600 text-xs font-bold uppercase">ภาษาอังกฤษ</span><span class="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">เต็ม ${maxEng}</span></div><div class="flex justify-between items-end"><span class="text-3xl font-bold text-gray-800">${s.english_score}</span><span class="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded-lg">ร้อยละ ${pEng.toFixed(1)}</span></div></div>
                     </div>
 
-                    <div class="bg-gradient-to-br from-amber-50 via-orange-50 to-white rounded-3xl p-6 border border-amber-100 text-center relative overflow-hidden shadow-sm">
+                    <div class="bg-gradient-to-r from-amber-100 to-orange-50 rounded-2xl p-5 border border-amber-200 shadow-sm mb-4 flex justify-between items-center">
+                        <span class="text-amber-800 font-bold uppercase text-sm">คะแนนรวม 3 วิชา (เต็ม 100)</span>
+                        <span class="text-3xl font-black text-amber-600">${academicScore.toFixed(2)}</span>
+                    </div>
+
+                    <div class="bg-gradient-to-r from-purple-100 to-indigo-50 rounded-2xl p-5 border border-purple-200 shadow-sm mb-4 flex justify-between items-center">
+                        <span class="text-purple-800 font-bold uppercase text-sm">คะแนนสอบปฏิบัติ (เต็ม ${maxPrac})</span>
+                        <span class="text-3xl font-black text-purple-600">${practicalScore.toFixed(2)}</span>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl p-6 border border-green-400 text-center relative overflow-hidden shadow-lg text-white">
                         <div class="relative z-10 flex flex-col items-center">
-                            <p class="text-amber-700 font-bold uppercase tracking-widest text-xs mb-2">คะแนนรวมทั้งหมด (วิชาการ + ปฏิบัติ)</p>
-                            <div class="flex items-baseline gap-2"><p class="text-5xl font-black text-amber-500 drop-shadow-sm tracking-tight">${grandTotal.toFixed(2)}</p></div>
+                            <p class="font-bold uppercase tracking-widest text-xs mb-2 opacity-90">คะแนนรวมทั้งหมด (เต็ม ${maxGrandTotal})</p>
+                            <div class="flex items-baseline gap-2"><p class="text-6xl font-black drop-shadow-md tracking-tight">${grandTotal.toFixed(2)}</p></div>
+                            <span class="text-xs font-bold bg-white/20 px-4 py-1.5 rounded-full mt-3">คิดเป็นร้อยละ ${((grandTotal/maxGrandTotal)*100).toFixed(1)}</span>
                         </div>
                     </div>
+
                     <div class="mt-8 mb-4 text-center border-t border-gray-200/50 pt-4"><p class="text-xs text-gray-400 font-medium">พัฒนาระบบโดย ครูอานนท์ เมืองแก้ว</p></div>
                 </div>
             </div>`;
@@ -257,7 +282,6 @@
             document.getElementById('form-grade').value = formGrade;
             document.getElementById('form-name').value = s.full_name; document.getElementById('form-school').value = s.previous_school; 
             document.getElementById('score-science').value = s.science_score; document.getElementById('score-math').value = s.math_score; document.getElementById('score-english').value = s.english_score; 
-            // เพิ่ม: ใส่ค่าคะแนนปฏิบัติ
             document.getElementById('score-practical').value = s.practical_score || 0;
 
             updateChoiceOptions(); 
@@ -275,8 +299,8 @@
             const data = { 
                 exam_id: document.getElementById('form-exam-id').value, national_id: document.getElementById('form-national-id').value, grade_level: document.getElementById('form-grade').value, full_name: document.getElementById('form-name').value, previous_school: document.getElementById('form-school').value, 
                 thai_score: scores[0], math_score: scores[1], science_score: scores[2], english_score: scores[3], aptitude_score: scores[4], 
-                practical_score: scores[4], // ส่งคะแนนปฏิบัติ
-                total_score: scores.reduce((a,b)=>a+b,0) - scores[0], // Total = Sci+Math+Eng+Prac
+                practical_score: scores[4], 
+                total_score: scores.reduce((a,b)=>a+b,0) - scores[0], 
                 choice_1: document.getElementById('form-choice-1').value, choice_2: document.getElementById('form-choice-2').value, choice_3: document.getElementById('form-choice-3').value
             }; 
             showLoading('กำลังบันทึก...'); const action = formMode === 'create' ? window.dataSdk.create(data) : (data.__backendId = document.getElementById('student-backend-id').value, window.dataSdk.update(data)); action.then(res => { setTimeout(() => { hideLoading(); if(res.isOk) { closeModal(); showAlert('สำเร็จ', 'บันทึกเรียบร้อย'); } else { showAlert('ผิดพลาด', res.error.message); } }, 500); }); 
