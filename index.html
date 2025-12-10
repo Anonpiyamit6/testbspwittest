@@ -424,17 +424,15 @@ function renderStudentView() {
     const thaiGrade = getThaiGrade(currentUser.grade_level);
     const grade = currentUser.grade_level.toLowerCase();
 
-    // --- Logic การแสดงผลโครงการ (แก้ไขใหม่) ---
+    // --- Logic การแสดงผล (แก้ไขล่าสุด) ---
     
-    // 1. เงื่อนไขการแสดงส่วนโครงการทั้งหมด:
-    // ถ้าเป็น ป.4 หรือ ป.5 -> ซ่อนทั้งหมด (false)
-    // ชั้นอื่น -> แสดง (true)
+    // 1. เงื่อนไขการแสดงส่วนโครงการทั้งหมด (ป.4-5 ปิดทิ้ง)
     const showProjectsSection = !['p4', 'p5'].includes(grade); 
 
-    // 2. เงื่อนไขการแสดงอันดับที่ 3:
-    // ถ้าเป็น ม.4 -> ซ่อนอันดับ 3 (false)
-    // ชั้นอื่นที่เหลือ -> แสดงอันดับ 3 (true)
-    const showRank3 = grade !== 'm4'; 
+    // 2. เงื่อนไขการแสดงอันดับที่ 3 
+    // ถ้าเป็น ม.3 หรือ ม.4 -> ให้เป็น false (ไม่แสดง)
+    // ถ้าเป็นชั้นอื่น -> ให้เป็น true (แสดง)
+    const showRank3 = !['m3', 'm4'].includes(grade); 
 
     document.getElementById('app').innerHTML = `
     <div class="h-full bg-[#fdfbf7] overflow-auto">
@@ -539,6 +537,7 @@ function renderStudentView() {
     </div>
     `;
 }
+  
 function switchAddTab(tabName) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(`tab-${tabName}`).classList.add('active'); ['single','multiple','excel','score'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden')); document.getElementById(`view-${tabName}`).classList.remove('hidden'); if(tabName==='multiple') { document.getElementById('multiple-tbody').innerHTML=''; addMultipleRow(); } }
 function showAddStudentForm() { formMode = 'create'; document.getElementById('modal-title').textContent = 'เพิ่มผู้เข้าสอบใหม่'; document.getElementById('add-mode-tabs').classList.remove('hidden'); document.getElementById('score-section').classList.add('hidden'); switchAddTab('single'); document.getElementById('student-form').reset(); openModal(); }
 function showEditForm(id) {
