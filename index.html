@@ -148,9 +148,10 @@
   <div id="student-modal" class="hidden-force fixed inset-0 flex items-center justify-center z-[100]">
     <div class="modal-overlay absolute w-full h-full" onclick="closeModal()"></div>
     <div class="bg-white w-full h-full md:w-11/12 md:h-auto md:max-w-4xl md:max-h-[90vh] md:rounded-[2rem] shadow-2xl z-[101] flex flex-col border border-lime-100 relative transform transition-all">
+      
       <div class="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-lime-50 to-white border-b border-lime-100 shrink-0">
-        <div class="flex items-center gap-3"><p class="text-lg md:text-xl font-bold text-lime-800" id="modal-title">จัดการข้อมูล</p></div>
-        <button type="button" class="text-gray-400 hover:text-red-500 p-2" onclick="closeModal()">X</button>
+        <div class="flex items-center gap-3"><div class="p-2 bg-lime-100 rounded-full text-lime-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></div><p class="text-lg md:text-xl font-bold text-lime-800" id="modal-title">จัดการข้อมูล</p></div>
+        <button type="button" class="text-gray-400 hover:text-red-500 p-2 rounded-full active:bg-gray-100" onclick="closeModal()"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
       </div>
 
       <div id="add-mode-tabs" class="flex px-4 border-b border-gray-100 bg-gray-50/50 hidden overflow-x-auto shrink-0">
@@ -161,6 +162,7 @@
       </div>
 
       <div class="overflow-y-auto p-4 md:p-8 flex-1 bg-white">
+        
         <div id="view-single" class="block pb-20 md:pb-0">
             <form id="student-form" onsubmit="handleSingleSubmit(event)">
                 <input type="hidden" id="student-backend-id">
@@ -197,6 +199,13 @@
                 </div>
             </form>
         </div>
+
+        <div id="view-multiple" class="hidden h-full flex flex-col"><div class="flex-1 overflow-auto border border-gray-100 rounded-xl mb-4 shadow-inner bg-gray-50/50"><table class="w-full text-sm text-left text-gray-500" id="multiple-table"><thead class="text-xs text-gray-500 uppercase bg-gray-100 sticky top-0"><tr><th class="px-2 py-3">เลขบัตร</th><th class="px-2 py-3">รหัส</th><th class="px-2 py-3">ชื่อ</th><th class="px-2 py-3">ชั้น</th><th class="px-2 py-3">รร.</th><th class="px-1 py-3">ลบ</th></tr></thead><tbody id="multiple-tbody" class="bg-white"></tbody></table></div><div class="flex justify-between items-center bg-white p-2 rounded-lg gap-2"><button type="button" onclick="addMultipleRow()" class="flex-1 text-lime-600 font-bold bg-lime-50 px-3 py-3 rounded-lg">+ เพิ่มแถว</button><button type="button" onclick="handleMultipleSubmit()" class="flex-1 btn-primary px-3 py-3 rounded-lg font-bold text-yellow-900 shadow-md">บันทึก</button></div></div>
+        <div id="view-excel" class="hidden"><div class="border-2 border-dashed border-lime-200 bg-lime-50/30 rounded-2xl p-6 md:p-10 text-center hover:bg-lime-50 transition-colors cursor-pointer" id="drop-zone-name"><label for="excel-upload-name" class="cursor-pointer block"><span class="block text-lg font-bold text-lime-700">เลือกไฟล์ Excel (รายชื่อ)</span><input id="excel-upload-name" type="file" class="hidden" accept=".xlsx, .xls" onchange="handleExcelUpload(this, 'student')"></label></div><div class="mt-6 bg-amber-50 p-6 rounded-2xl border border-amber-100"><h4 class="font-bold text-amber-700 mb-2">คำแนะนำ</h4><ul class="text-sm text-amber-800 space-y-1 ml-7 list-disc"><li>A: รหัสสอบ</li><li>B: เลขบัตรฯ</li><li>C: ชื่อ-นามสกุล</li><li>D: ชั้น</li><li>E: รร.เดิม</li><li>F: อันดับ 1</li><li>G: อันดับ 2</li><li>H: อันดับ 3</li></ul></div><div id="excel-preview-area" class="mt-6 hidden"><div class="flex justify-between items-center mb-3"><h4 class="font-bold text-gray-700 text-sm">ข้อมูล (<span id="excel-count">0</span> คน)</h4><button type="button" onclick="confirmExcelImport('student')" class="px-4 py-2 btn-primary rounded-lg font-bold text-sm shadow-md">ยืนยัน</button></div><div class="overflow-auto max-h-48 border border-gray-200 rounded-xl text-xs bg-white"><table class="w-full text-left" id="excel-preview-table"></table></div></div></div>
+        <div id="view-score" class="hidden"><div class="border-2 border-dashed border-purple-200 bg-purple-50/30 rounded-2xl p-6 md:p-10 text-center hover:bg-purple-50 transition-colors cursor-pointer" id="drop-zone-score"><label for="excel-upload-score" class="cursor-pointer block"><span class="block text-lg font-bold text-purple-700">เลือกไฟล์ Excel (คะแนน)</span><input id="excel-upload-score" type="file" class="hidden" accept=".xlsx, .xls" onchange="handleExcelUpload(this, 'score')"></label></div></div>
+      </div>
+    </div>
+  </div>
        
   <script>
     const defaultConfig = { 
@@ -227,30 +236,27 @@
 
     // --- Options for Choices ---
     // ฟังก์ชันอัปเดตตัวเลือกห้องเรียนโครงการ
-    // 1. ฟังก์ชันอัปเดตตัวเลือก (แก้ให้ ม.4 เหลือแค่ 2 ตัวเลือก และซ่อนอันดับ 3)
+    // ฟังก์ชันอัปเดตตัวเลือก (ม.4 มีแค่ 2 อันดับ, ม.1 มี 3)
     function updateChoiceOptions() {
         const grade = document.getElementById('form-grade').value;
-        const choice3Div = document.getElementById('div-choice-3'); // ใช้ ID ที่ตั้งใหม่
+        const choice3Div = document.getElementById('div-choice-3');
         const choice3Select = document.getElementById('form-choice-3');
         
         const choices = ['form-choice-1', 'form-choice-2'];
         let options = [];
 
         if (['p4','p5','p6'].includes(grade)) {
-            // ม.1: มี 3 อันดับ
             options = ['S&M', 'GATE', 'EIS', 'ทั่วไป'];
-            choice3Div.classList.remove('hidden'); // แสดงอันดับ 3
+            if(choice3Div) choice3Div.classList.remove('hidden'); // แสดงอันดับ 3
             
             // อัปเดตตัวเลือกอันดับ 3
             const val3 = choice3Select.value;
             choice3Select.innerHTML = '<option value="">- เลือก -</option>' + options.map(o => `<option value="${o}">${o}</option>`).join('');
             choice3Select.value = val3;
         } else {
-            // ม.4: มีแค่ SME กับ GATE และซ่อนอันดับ 3
-            options = ['SME', 'GATE']; // ตัด 'ทั่วไป' ออกตามโจทย์
-            
-            choice3Div.classList.add('hidden'); // ซ่อนอันดับ 3
-            choice3Select.value = ''; // ล้างค่าทิ้ง
+            options = ['SME', 'GATE'];
+            if(choice3Div) choice3Div.classList.add('hidden'); // ซ่อนอันดับ 3
+            choice3Select.value = ''; 
         }
 
         // อัปเดตอันดับ 1 และ 2
@@ -262,16 +268,19 @@
         });
     }
 
-    // 2. ฟังก์ชันเปิด Modal แก้ไข (เพิ่มการเรียก updateChoiceOptions)
+    // ฟังก์ชันเปิดหน้าต่างแก้ไข (Updated)
     function showEditForm(id) { 
         formMode = 'update'; 
         document.getElementById('modal-title').textContent = 'แก้ไขข้อมูล';
         document.getElementById('add-mode-tabs').classList.add('hidden'); 
+        
+        // ซ่อนทุก View แล้วเปิด Single View
         ['single','multiple','excel','score'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden')); 
         document.getElementById('view-single').classList.remove('hidden'); 
         document.getElementById('score-section').classList.remove('hidden'); 
         
-        const s = studentsData.find(x => x.__backendId === id); if(!s) return; 
+        const s = studentsData.find(x => x.__backendId === id); 
+        if(!s) { console.error("ไม่พบข้อมูลนักเรียน ID:", id); return; }
         
         // ใส่ข้อมูลลงฟอร์ม
         document.getElementById('student-backend-id').value = s.__backendId; 
@@ -284,28 +293,28 @@
         document.getElementById('score-math').value = s.math_score; 
         document.getElementById('score-english').value = s.english_score; 
         
-        // สำคัญ: เรียกอัปเดตตัวเลือกก่อน แล้วค่อยใส่ค่า Choice
+        // เรียกอัปเดตตัวเลือกก่อน แล้วค่อยใส่ค่า Choice
         updateChoiceOptions(); 
         
         setTimeout(() => {
-            document.getElementById('form-choice-1').value = s.choice_1 || '';
-            document.getElementById('form-choice-2').value = s.choice_2 || '';
-            document.getElementById('form-choice-3').value = s.choice_3 || '';
+            if(s.choice_1) document.getElementById('form-choice-1').value = s.choice_1;
+            if(s.choice_2) document.getElementById('form-choice-2').value = s.choice_2;
+            if(s.choice_3) document.getElementById('form-choice-3').value = s.choice_3;
         }, 50);
         
         openModal(); 
     }
 
-    // 3. ฟังก์ชันเปิด Modal เพิ่ม (เพิ่มการเรียก updateChoiceOptions)
+    // ฟังก์ชันเปิดหน้าต่างเพิ่มใหม่ (Updated)
     function showAddStudentForm() { 
         formMode = 'create'; 
         document.getElementById('modal-title').textContent = 'เพิ่มผู้เข้าสอบใหม่';
         document.getElementById('student-form').reset(); 
         document.getElementById('add-mode-tabs').classList.remove('hidden'); 
         document.getElementById('score-section').classList.add('hidden'); 
-        switchAddTab('single'); 
         
-        updateChoiceOptions(); // เรียกทันทีที่เปิด
+        switchAddTab('single'); 
+        updateChoiceOptions(); 
         openModal(); 
     }
 
