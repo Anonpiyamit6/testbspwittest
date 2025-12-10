@@ -4,9 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ระบบประกาศผลคะแนน</title>
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+  
   <style>
     body { box-sizing: border-box; font-family: 'Sarabun', sans-serif; background-color: #f0fdf4; color: #4b5563; -webkit-tap-highlight-color: transparent; }
     .gradient-bg { background-color: #C6E686; } 
@@ -24,6 +26,7 @@
     .tab-btn { border-bottom: 3px solid transparent; color: #9ca3af; padding: 12px 16px; transition: all 0.2s; white-space: nowrap; cursor: pointer; }
     .tab-btn.active { border-bottom: 3px solid #84cc16; color: #4d7c0f; font-weight: bold; background-color: #f7fee7; }
   </style>
+
   <script>
     // ===========================================================
     // ⚠️ 1. วาง URL จาก Google Apps Script ตรงนี้ ⚠️
@@ -266,32 +269,34 @@
         choiceSection.classList.remove('hidden');
         let options = [];
         if (grade === 'p6') { options = ['S&M', 'GATE', 'EIS', 'ทั่วไป']; choice3Div.classList.remove('hidden'); choice3Select.innerHTML = '<option value="">- เลือก -</option>' + options.map(o => `<option value="${o}">${o}</option>`).join(''); } 
-        else { options = ['SME', 'GATE', 'ทั่วไป']; choice3Div.classList.add('hidden'); choice3Select.value = ''; }
+        else { options = ['SME', 'GATE']; choice3Div.classList.add('hidden'); choice3Select.value = ''; }
         ['form-choice-1', 'form-choice-2'].forEach(id => { document.getElementById(id).innerHTML = '<option value="">- เลือก -</option>' + options.map(o => `<option value="${o}">${o}</option>`).join(''); });
     }
 
     function showAddStudentForm() { formMode = 'create'; document.getElementById('modal-title').textContent = 'เพิ่มผู้เข้าสอบใหม่'; document.getElementById('student-form').reset(); document.getElementById('add-mode-tabs').classList.remove('hidden'); document.getElementById('score-section').classList.add('hidden'); switchAddTab('single'); updateChoiceOptions(); openModal(); }
     
+    // --- SHOW EDIT FORM (FIXED LOGIC) ---
     function showEditForm(id) { 
         formMode = 'update'; document.getElementById('modal-title').textContent = 'แก้ไขข้อมูล'; document.getElementById('add-mode-tabs').classList.add('hidden'); ['single','multiple','excel','score'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden')); document.getElementById('view-single').classList.remove('hidden'); document.getElementById('score-section').classList.remove('hidden'); 
         const s = studentsData.find(x => x.__backendId === id); if(!s) return; 
         document.getElementById('student-backend-id').value = s.__backendId; document.getElementById('form-national-id').value = s.national_id || ''; document.getElementById('form-exam-id').value = s.exam_id; 
         
-        // Map grade properly
-        const rawG = s.grade_level.trim();
-        let formGrade = 'p6'; // default
+        // **จับคู่ระดับชั้นให้ตรงกับ value ใน select**
+        const rawG = s.grade_level.trim().toLowerCase();
+        let formGrade = 'p6'; 
         if(rawG.includes('4')) formGrade = 'p4';
         else if(rawG.includes('5')) formGrade = 'p5';
         else if(rawG.includes('6')) formGrade = 'p6';
-        else if(rawG.includes('3') || rawG.includes('มัธยม')) formGrade = 'm3';
+        else if(rawG.includes('3') || rawG.includes('4') || rawG.includes('ม')) formGrade = 'm3'; // ม.3 หรือ ม.4 ให้มองเป็น m3 (Secondary Entrance)
         document.getElementById('form-grade').value = formGrade;
 
         document.getElementById('form-name').value = s.full_name; document.getElementById('form-school').value = s.previous_school; 
         document.getElementById('score-science').value = s.science_score; document.getElementById('score-math').value = s.math_score; document.getElementById('score-english').value = s.english_score; 
         
+        // สร้างตัวเลือกก่อน
         updateChoiceOptions(); 
         
-        // FIX: Force set value after options generated
+        // ใส่ค่าที่บันทึกไว้ลงไป
         setTimeout(() => { 
             if(s.choice_1) document.getElementById('form-choice-1').value = s.choice_1.trim(); 
             if(s.choice_2) document.getElementById('form-choice-2').value = s.choice_2.trim(); 
