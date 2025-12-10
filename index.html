@@ -419,8 +419,14 @@ function renderStudentView() {
     const pEng = (sEng/maxEng)*100;
 
     const thaiGrade = getThaiGrade(currentUser.grade_level);
+    
+    // --- Logic การแสดงผลโครงการ ---
+    const grade = currentUser.grade_level.toLowerCase();
+    // ถ้าเป็น ป.4 หรือ ป.5 ไม่ต้องแสดงส่วนโครงการเลย
+    const showProjectsSection = !['p4', 'p5'].includes(grade); 
+    // ถ้าเป็น ม.4 ให้แสดงแค่ 2 อันดับ (ซ่อนอันดับ 3), ชั้นอื่นแสดงครบ 3
+    const showRank3 = grade !== 'm4'; 
 
-    // --- ส่วน HTML ที่ปรับปรุงใหม่ ---
     document.getElementById('app').innerHTML = `
     <div class="h-full bg-[#fdfbf7] overflow-auto">
     <div class="gradient-bg h-48 w-full absolute top-0 left-0 z-0 rounded-b-[3rem] shadow-lg opacity-90"></div>
@@ -443,6 +449,7 @@ function renderStudentView() {
     </div>
     </div>
 
+    ${showProjectsSection ? `
     <div class="mb-8">
         <h3 class="text-gray-600 font-bold text-lg mb-4 ml-2 flex items-center gap-2">
             <svg class="w-5 h-5 text-lime-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
@@ -467,6 +474,7 @@ function renderStudentView() {
                 <div class="absolute right-[-10px] bottom-[-10px] text-lime-50 opacity-50 font-black text-6xl pointer-events-none">2</div>
             </div>
 
+            ${showRank3 ? `
             <div class="bg-white border-2 border-lime-100 p-4 rounded-2xl flex items-center gap-4 shadow-sm relative overflow-hidden ${!currentUser.choice_3 ? 'opacity-50 grayscale' : ''}">
                 <div class="bg-lime-300 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0 shadow-md">3</div>
                 <div class="flex flex-col z-10">
@@ -475,8 +483,11 @@ function renderStudentView() {
                 </div>
                 <div class="absolute right-[-10px] bottom-[-10px] text-lime-50 opacity-50 font-black text-6xl pointer-events-none">3</div>
             </div>
+            ` : ''}
         </div>
     </div>
+    ` : ''}
+
     <h3 class="text-gray-600 font-bold text-lg mb-4 ml-2 flex items-center gap-2"><svg class="w-5 h-5 text-lime-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>คะแนนรายวิชา</h3>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -519,7 +530,6 @@ function renderStudentView() {
     </div>
     `;
 }
-
 function switchAddTab(tabName) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(`tab-${tabName}`).classList.add('active'); ['single','multiple','excel','score'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden')); document.getElementById(`view-${tabName}`).classList.remove('hidden'); if(tabName==='multiple') { document.getElementById('multiple-tbody').innerHTML=''; addMultipleRow(); } }
 function showAddStudentForm() { formMode = 'create'; document.getElementById('modal-title').textContent = 'เพิ่มผู้เข้าสอบใหม่'; document.getElementById('add-mode-tabs').classList.remove('hidden'); document.getElementById('score-section').classList.add('hidden'); switchAddTab('single'); document.getElementById('student-form').reset(); openModal(); }
 function showEditForm(id) {
