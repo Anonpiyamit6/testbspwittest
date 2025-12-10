@@ -1,9 +1,10 @@
-// Google Apps Script - Update รองรับ 3 อันดับ + ผลการคัดเลือก
-const SHEET_ID = '17WNCt-dBXrO0c-mT18gfDCky0tx1eKCsYkFYUSw3TUw'; 
+// Google Apps Script (Backend) - Full Fix Version
+const SHEET_ID = '17WNCt-dBXrO0c-mT18gfDCky0tx1eKCsYkFYUSw3TUw'; // ตรวจสอบ ID Sheet ให้ถูกต้อง
 const SHEET_NAME = 'Students';
 
 function doGet(e) {
-  return ContentService.createTextOutput(JSON.stringify({ status: 'active', message: 'API V2 Ready' })).setMimeType(ContentService.MimeType.JSON);
+  return ContentService.createTextOutput(JSON.stringify({ status: 'active', message: 'API Ready' }))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 function doPost(e) {
@@ -24,7 +25,8 @@ function doPost(e) {
 
     return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({ success: false, message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, message: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
   } finally {
     lock.releaseLock();
   }
@@ -35,7 +37,7 @@ function getSheet() {
   let sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_NAME);
-    // เพิ่มคอลัมน์ Choice 1-3 และ Admission Result
+    // สร้าง Header ให้ครบ 17 คอลัมน์
     sheet.appendRow(['ID','Exam ID','Full Name','Previous School','Grade Level','Thai','Math','Science','English','Aptitude','Total','Rank','National ID', 'Choice 1', 'Choice 2', 'Choice 3', 'Admission Result']);
   }
   return sheet;
@@ -43,7 +45,6 @@ function getSheet() {
 
 function getAllStudents() {
   const sheet = getSheet();
-  // อ่านถึงคอลัมน์ 17 (Q)
   const data = sheet.getRange(1, 1, sheet.getLastRow(), 17).getDisplayValues();
   if (data.length <= 1) return { success: true, students: [] };
   
@@ -116,8 +117,6 @@ function updateStudent(data) {
   }
   return { success: false, message: 'ไม่พบข้อมูล' };
 }
-
-// updateScoresBulk, deleteStudent, deleteStudentsBulk ใช้ของเดิมได้ (แต่ต้องแก้เลขคอลัมน์ถ้ามีการแตะต้องแถว แต่ฟังก์ชันพวกนี้อิง ID หรือ Loop Row อยู่แล้ว จึงไม่ต้องแก้มาก ยกเว้น updateScoresBulk)
 
 function updateScoresBulk(scoresData) {
   const sheet = getSheet();
