@@ -409,6 +409,9 @@
        const pEng = (sEng/maxEng)*100;
 
        const thaiGrade = getThaiGrade(currentUser.grade_level);
+       
+       // เช็คว่าเป็นระดับสอบเข้า ม.4 หรือไม่ (ถ้าใช่ จะซ่อนอันดับ 3)
+       const isM4Entrance = ['m3', 'm4'].includes(currentUser.grade_level.toLowerCase());
 
        document.getElementById('app').innerHTML = `
           <div class="h-full bg-[#fdfbf7] overflow-auto">
@@ -445,7 +448,7 @@
 
                             <div class="border-t border-gray-100 pt-4">
                                 <p class="text-xs text-gray-400 font-bold mb-2 text-left">ลำดับการเลือกห้องเรียนโครงการ</p>
-                                <div class="grid grid-cols-3 gap-2">
+                                <div class="grid ${isM4Entrance ? 'grid-cols-2' : 'grid-cols-3'} gap-2">
                                     <div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center">
                                         <span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 1</span>
                                         <span class="text-sm font-bold text-gray-700 truncate block">${currentUser.choice_1 || '-'}</span>
@@ -454,12 +457,15 @@
                                         <span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 2</span>
                                         <span class="text-sm font-bold text-gray-700 truncate block">${currentUser.choice_2 || '-'}</span>
                                     </div>
+                                    
+                                    ${!isM4Entrance ? `
                                     <div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center">
                                         <span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 3</span>
                                         <span class="text-sm font-bold text-gray-700 truncate block">${currentUser.choice_3 || '-'}</span>
-                                    </div>
+                                    </div>` : ''}
                                 </div>
                             </div>
+
                         </div>
                    </div>
                 </div>
