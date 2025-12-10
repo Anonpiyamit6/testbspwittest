@@ -4,9 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ระบบประกาศผลคะแนน</title>
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+  
   <style>
     body { box-sizing: border-box; font-family: 'Sarabun', sans-serif; background-color: #f0fdf4; color: #4b5563; -webkit-tap-highlight-color: transparent; }
     .gradient-bg { background-color: #C6E686; } 
@@ -24,6 +26,7 @@
     .tab-btn { border-bottom: 3px solid transparent; color: #9ca3af; padding: 12px 16px; transition: all 0.2s; white-space: nowrap; cursor: pointer; }
     .tab-btn.active { border-bottom: 3px solid #84cc16; color: #4d7c0f; font-weight: bold; background-color: #f7fee7; }
   </style>
+
   <script>
     // ===========================================================
     // ⚠️ 1. วาง URL จาก Google Apps Script ตรงนี้ ⚠️
@@ -110,16 +113,11 @@
        const thaiGrade = getThaiGrade(currentUser.grade_level);
        const rawGrade = String(currentUser.grade_level).toLowerCase().trim();
        
-       // เช็ค Pre-test (ป.4, ป.5) - ใช้ keyword ภาษาไทยด้วยเพื่อความชัวร์
        const isP4 = rawGrade.includes('p4') || rawGrade.includes('ประถมศึกษาปีที่ 4');
        const isP5 = rawGrade.includes('p5') || rawGrade.includes('ประถมศึกษาปีที่ 5');
        const isPreTest = isP4 || isP5; 
-       
-       // เช็ค Secondary (ม.3 เข้า ม.4)
-       const isSecondary = rawGrade.includes('m3') || rawGrade.includes('มัธยม');
-       
-       // ตัวแปรควบคุมการแสดงผล
-       const shouldShowChoices = !isPreTest;
+       const isSecondary = rawGrade.includes('m3') || rawGrade.includes('มัธยม'); 
+       const shouldShowChoices = !isPreTest; 
 
        document.getElementById('app').innerHTML = `
           <div class="h-full bg-[#fdfbf7] overflow-auto">
@@ -140,16 +138,12 @@
                         <div class="flex-1 text-center md:text-left w-full">
                             <h2 class="text-2xl font-bold text-gray-800 mb-1">${currentUser.full_name}</h2>
                             <p class="text-lime-600 font-medium mb-4 text-sm">${thaiGrade}</p>
-                            
                             ${shouldShowChoices ? (currentUser.admission_result ? `<div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl text-center"><p class="text-green-800 font-bold text-lg">ขอแสดงความยินดี</p><p class="text-green-600">ผ่านการคัดเลือกเข้าศึกษาต่อโครงการ <span class="font-bold text-xl block mt-1">${currentUser.admission_result}</span></p></div>` : `<div class="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-xl text-center"><p class="text-gray-500">ยังไม่ผ่านเกณฑ์การคัดเลือกในรอบโควตา</p></div>`) : ''}
-                            
                             <div class="grid grid-cols-1 gap-3 text-gray-600 text-sm mb-4">
                                 <div class="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 flex justify-between"><span>เลขประจำตัวสอบ</span><span class="font-bold text-gray-800">${currentUser.exam_id}</span></div>
                                 <div class="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 flex justify-between"><span>ลำดับที่ (คะแนนรวม)</span><span class="font-bold text-blue-600">#${currentUser.rank}</span></div>
                             </div>
-
-                            ${shouldShowChoices ? `
-                            <div class="border-t border-gray-100 pt-4"><p class="text-xs text-gray-400 font-bold mb-2 text-left">ลำดับการเลือกห้องเรียนโครงการ</p><div class="grid ${isSecondary ? 'grid-cols-2' : 'grid-cols-3'} gap-2"><div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center"><span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 1</span><span class="text-sm font-bold text-gray-700 truncate block">${currentUser.choice_1 || '-'}</span></div><div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center"><span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 2</span><span class="text-sm font-bold text-gray-700 truncate block">${currentUser.choice_2 || '-'}</span></div>${!isSecondary ? `<div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center"><span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 3</span><span class="text-sm font-bold text-gray-700 truncate block">${currentUser.choice_3 || '-'}</span></div>` : ''}</div></div>` : ''} 
+                            ${shouldShowChoices ? `<div class="border-t border-gray-100 pt-4"><p class="text-xs text-gray-400 font-bold mb-2 text-left">ลำดับการเลือกห้องเรียนโครงการ</p><div class="grid ${isSecondary ? 'grid-cols-2' : 'grid-cols-3'} gap-2"><div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center"><span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 1</span><span class="text-sm font-bold text-gray-700 truncate block">${currentUser.choice_1 || '-'}</span></div><div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center"><span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 2</span><span class="text-sm font-bold text-gray-700 truncate block">${currentUser.choice_2 || '-'}</span></div>${!isSecondary ? `<div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center"><span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 3</span><span class="text-sm font-bold text-gray-700 truncate block">${currentUser.choice_3 || '-'}</span></div>` : ''}</div></div>` : ''} 
                         </div>
                    </div>
                 </div>
@@ -213,7 +207,7 @@
                              <th class="px-4 py-4 text-sm">รหัส</th>
                              <th class="px-4 py-4 text-sm">ชื่อ-สกุล</th>
                              <th class="px-4 py-4 text-sm">ชั้น</th>
-                             <th class="px-4 py-4 text-sm w-40">โครงการที่เลือก</th>
+                             <th class="px-4 py-4 text-sm w-48">โครงการที่เลือก</th>
                              <th class="px-4 py-4 text-sm text-center">คะแนน</th>
                              <th class="px-4 py-4 text-sm text-center">จัดการ</th>
                           </tr>
@@ -226,9 +220,9 @@
                                <td class="px-4 py-4 cursor-pointer hover:text-lime-600" onclick="showEditForm('${s.__backendId}')">${s.full_name}</td>
                                <td class="px-4 py-4 text-gray-500">${getThaiGrade(s.grade_level)}</td>
                                <td class="px-4 py-4 text-xs text-gray-600">
-                                  ${s.choice_1 ? `<div class="truncate">1. ${s.choice_1}</div>` : '-'}
-                                  ${s.choice_2 ? `<div class="truncate">2. ${s.choice_2}</div>` : ''}
-                                  ${s.choice_3 ? `<div class="truncate">3. ${s.choice_3}</div>` : ''}
+                                  ${s.choice_1 ? `<span class="block">1. ${s.choice_1}</span>` : '-'}
+                                  ${s.choice_2 ? `<span class="block">2. ${s.choice_2}</span>` : ''}
+                                  ${s.choice_3 ? `<span class="block">3. ${s.choice_3}</span>` : ''}
                                </td>
                                <td class="px-4 py-4 font-bold text-center">${s.total_score}</td>
                                <td class="px-4 py-4 text-center flex justify-center gap-2">
@@ -281,12 +275,29 @@
 
     function showAddStudentForm() { formMode = 'create'; document.getElementById('modal-title').textContent = 'เพิ่มผู้เข้าสอบใหม่'; document.getElementById('student-form').reset(); document.getElementById('add-mode-tabs').classList.remove('hidden'); document.getElementById('score-section').classList.add('hidden'); switchAddTab('single'); updateChoiceOptions(); openModal(); }
     
+    // --- FIX: Show Edit Form (Map grade properly) ---
     function showEditForm(id) { 
         formMode = 'update'; document.getElementById('modal-title').textContent = 'แก้ไขข้อมูล'; document.getElementById('add-mode-tabs').classList.add('hidden'); ['single','multiple','excel','score'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden')); document.getElementById('view-single').classList.remove('hidden'); document.getElementById('score-section').classList.remove('hidden'); 
         const s = studentsData.find(x => x.__backendId === id); if(!s) return; 
-        document.getElementById('student-backend-id').value = s.__backendId; document.getElementById('form-national-id').value = s.national_id || ''; document.getElementById('form-exam-id').value = s.exam_id; document.getElementById('form-grade').value = s.grade_level; document.getElementById('form-name').value = s.full_name; document.getElementById('form-school').value = s.previous_school; 
+        document.getElementById('student-backend-id').value = s.__backendId; document.getElementById('form-national-id').value = s.national_id || ''; document.getElementById('form-exam-id').value = s.exam_id; 
+        
+        // Map grade text to value
+        const gradeMap = {
+            'ประถมศึกษาปีที่ 4': 'p4', 'p4': 'p4',
+            'ประถมศึกษาปีที่ 5': 'p5', 'p5': 'p5',
+            'ประถมศึกษาปีที่ 6': 'p6', 'p6': 'p6',
+            'มัธยมศึกษาปีที่ 3': 'm3', 'm3': 'm3'
+        };
+        const formGrade = gradeMap[s.grade_level.trim()] || 'p6'; 
+        document.getElementById('form-grade').value = formGrade;
+
+        document.getElementById('form-name').value = s.full_name; document.getElementById('form-school').value = s.previous_school; 
         document.getElementById('score-science').value = s.science_score; document.getElementById('score-math').value = s.math_score; document.getElementById('score-english').value = s.english_score; 
-        updateChoiceOptions(); setTimeout(() => { if(s.choice_1) document.getElementById('form-choice-1').value = s.choice_1; if(s.choice_2) document.getElementById('form-choice-2').value = s.choice_2; if(s.choice_3) document.getElementById('form-choice-3').value = s.choice_3; }, 50); openModal(); 
+        
+        // Call update options then set values
+        updateChoiceOptions(); 
+        setTimeout(() => { if(s.choice_1) document.getElementById('form-choice-1').value = s.choice_1; if(s.choice_2) document.getElementById('form-choice-2').value = s.choice_2; if(s.choice_3) document.getElementById('form-choice-3').value = s.choice_3; }, 50); 
+        openModal(); 
     }
     
     function handleSingleSubmit(e) { 
@@ -302,7 +313,7 @@
 
     function addMultipleRow() { const tr = document.createElement('tr'); tr.className = 'bg-white border-b hover:bg-gray-50'; tr.innerHTML = `<td class="p-2"><input type="text" class="w-full border rounded px-2 py-1 multi-national-id text-xs" placeholder="บัตรฯ"></td><td class="p-2"><input type="text" class="w-full border rounded px-2 py-1 multi-exam-id text-xs" placeholder="รหัส"></td><td class="p-2"><input type="text" class="w-full border rounded px-2 py-1 multi-name text-xs" placeholder="ชื่อ"></td><td class="p-2"><select class="w-full border rounded px-2 py-1 multi-grade text-xs"><option value="p6">ป.6</option><option value="p5">ป.5</option><option value="p4">ป.4</option><option value="m3">ม.3</option></select></td><td class="p-2"><input type="text" class="w-full border rounded px-2 py-1 multi-school text-xs" placeholder="รร."></td><td class="p-2 text-center"><button type="button" onclick="this.closest('tr').remove()" class="text-red-500 font-bold">x</button></td>`; document.getElementById('multiple-tbody').appendChild(tr); }
     function handleMultipleSubmit() { const rows = document.querySelectorAll('#multiple-tbody tr'); const bulkData = []; rows.forEach(row => { const nid = row.querySelector('.multi-national-id').value.trim(); const id = row.querySelector('.multi-exam-id').value.trim(); const name = row.querySelector('.multi-name').value.trim(); if(id && name) bulkData.push({ exam_id: id, national_id: nid, full_name: name, grade_level: row.querySelector('.multi-grade').value, previous_school: row.querySelector('.multi-school').value.trim(), thai_score:0, math_score:0, science_score:0, english_score:0, aptitude_score:0, total_score:0, rank:0 }); }); if(bulkData.length === 0) return showAlert('แจ้งเตือน', 'กรุณากรอกข้อมูลอย่างน้อย 1 รายการ'); showConfirm('ยืนยัน', `เพิ่ม ${bulkData.length} รายการ?`, () => { showLoading('กำลังบันทึก...'); window.dataSdk.createBulk(bulkData).then(res => { setTimeout(() => { hideLoading(); if(res.isOk) { closeModal(); showAlert('สำเร็จ', 'บันทึกเรียบร้อย'); } else { showAlert('ผิดพลาด', res.error.message); } }, 500); }); }); }
-    function handleExcelUpload(input, type) { if(!input.files[0]) return; const reader = new FileReader(); reader.onload = (e) => { const workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'}); const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1, raw: false, defval: ""}); if(type === 'student') { excelDataCache = []; for(let i=1; i<jsonData.length; i++) { const row = jsonData[i]; if(row[0] && row[2]) excelDataCache.push({ exam_id: String(row[0]), national_id: String(row[1]||''), full_name: String(row[2]), grade_level: String(row[3]||'m3').toLowerCase(), previous_school: String(row[4]||''), choice_1: String(row[5]||''), choice_2: String(row[6]||''), choice_3: String(row[7]||''), thai_score:0, math_score:0, science_score:0, english_score:0, aptitude_score:0, total_score:0, rank:0 }); } document.getElementById('excel-count').textContent = excelDataCache.length; document.getElementById('excel-preview-area').classList.remove('hidden'); document.getElementById('excel-preview-table').innerHTML = `<thead><tr class="bg-gray-100"><th>รหัส</th><th>ชื่อ</th><th>ชั้น</th></tr></thead><tbody>` + excelDataCache.slice(0,5).map(p=>`<tr><td>${p.exam_id}</td><td>${p.full_name}</td><td>${p.grade_level}</td></tr>`).join('') + `</tbody>`; } else if(type === 'score') { scoreDataCache = []; for(let i=1; i<jsonData.length; i++) { const row = jsonData[i]; if(row[0]) scoreDataCache.push({ exam_id: String(row[0]), science_score: row[1]||0, math_score: row[2]||0, english_score: row[3]||0 }); } document.getElementById('score-count').textContent = scoreDataCache.length; document.getElementById('score-preview-area').classList.remove('hidden'); document.getElementById('score-preview-table').innerHTML = `<thead><tr class="bg-gray-100"><th>รหัส</th><th>วิทย์</th><th>คณิต</th><th>อังกฤษ</th></tr></thead><tbody>` + scoreDataCache.slice(0,5).map(p=>`<tr><td>${p.exam_id}</td><td>${p.science_score}</td><td>${p.math_score}</td><td>${p.english_score}</td></tr>`).join('') + `</tbody>`; } }; reader.readAsArrayBuffer(input.files[0]); }
+    function handleExcelUpload(input, type) { if(!input.files[0]) return; const reader = new FileReader(); reader.onload = (e) => { const workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'}); const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1, raw: false, defval: ""}); if(type === 'student') { excelDataCache = []; for(let i=1; i<jsonData.length; i++) { const row = jsonData[i]; if(row[0] && row[2]) excelDataCache.push({ exam_id: String(row[0]), national_id: String(row[1]||''), full_name: String(row[2]), grade_level: String(row[3]||'m3').toLowerCase(), previous_school: String(row[4]||''), choice_1: String(row[5]||''), choice_2: String(row[6]||''), choice_3: String(row[7]||''), thai_score:0, math_score:0, science_score:0, english_score:0, aptitude_score:0, total_score:0, rank:0 }); } document.getElementById('excel-count').textContent = excelDataCache.length; document.getElementById('excel-preview-area').classList.remove('hidden'); document.getElementById('excel-preview-table').innerHTML = `<thead><tr class="bg-gray-100"><th>รหัส</th><th>ชื่อ</th><th>โครงการ 1</th></tr></thead><tbody>` + excelDataCache.slice(0,5).map(p=>`<tr><td>${p.exam_id}</td><td>${p.full_name}</td><td>${p.choice_1}</td></tr>`).join('') + `</tbody>`; } else if(type === 'score') { scoreDataCache = []; for(let i=1; i<jsonData.length; i++) { const row = jsonData[i]; if(row[0]) scoreDataCache.push({ exam_id: String(row[0]), science_score: row[1]||0, math_score: row[2]||0, english_score: row[3]||0 }); } document.getElementById('score-count').textContent = scoreDataCache.length; document.getElementById('score-preview-area').classList.remove('hidden'); document.getElementById('score-preview-table').innerHTML = `<thead><tr class="bg-gray-100"><th>รหัส</th><th>วิทย์</th><th>คณิต</th><th>อังกฤษ</th></tr></thead><tbody>` + scoreDataCache.slice(0,5).map(p=>`<tr><td>${p.exam_id}</td><td>${p.science_score}</td><td>${p.math_score}</td><td>${p.english_score}</td></tr>`).join('') + `</tbody>`; } }; reader.readAsArrayBuffer(input.files[0]); }
     function confirmExcelImport(type) { if(type === 'student' && excelDataCache.length > 0) { showConfirm('ยืนยัน', `นำเข้า ${excelDataCache.length} รายการ?`, () => { showLoading('กำลังนำเข้า...'); window.dataSdk.createBulk(excelDataCache).then(res => { setTimeout(() => { hideLoading(); if(res.isOk) { closeModal(); showAlert('สำเร็จ', 'เรียบร้อย'); } else { showAlert('ผิดพลาด', res.error.message); } }, 500); }); }); } else if(type === 'score' && scoreDataCache.length > 0) { showConfirm('ยืนยัน', `อัปเดตคะแนน ${scoreDataCache.length} รายการ?`, () => { showLoading('กำลังอัปเดตคะแนน...'); window.dataSdk.updateScoresBulk(scoreDataCache).then(res => { setTimeout(() => { hideLoading(); if(res.isOk) { closeModal(); showAlert('สำเร็จ', res.message); } else { showAlert('ผิดพลาด', res.error.message); } }, 500); }); }); } }
 
     function showAlert(t, m) { document.getElementById('alert-title').textContent = t; document.getElementById('alert-message').textContent = m; document.getElementById('alert-modal').classList.remove('hidden-force'); }
