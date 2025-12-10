@@ -29,7 +29,7 @@
 
   <script>
     // ===========================================================
-    // ⚠️ 1. วาง URL จาก Google Apps Script ตรงนี้ ⚠️
+    // ⚠️ วาง URL Google Apps Script ที่นี่ ⚠️
     // ===========================================================
     const API_URL = "https://script.google.com/macros/s/AKfycbxjl2-P7ia1wsrY_ptExFJWUWI4VUU8GKL9-XYujPSt-0TNAuEXNRw-VLibzq9cH0o/exec"; 
 
@@ -39,12 +39,15 @@
         admission_year: "2569" 
     };
 
+    // --- Global Variables ---
     let currentUser = null, currentView = 'login', adminTab = 'm1', studentsData = [], searchQuery = '', formMode = 'create', excelDataCache = [], scoreDataCache = [], confirmCallback = null, isSidebarOpen = false, checkedIds = new Set();
 
+    // --- Helpers ---
     function getThaiGrade(code) { const map = { 'p4': 'ประถมศึกษาปีที่ 4', 'p5': 'ประถมศึกษาปีที่ 5', 'p6': 'ประถมศึกษาปีที่ 6', 'm3': 'มัธยมศึกษาปีที่ 3' }; return map[String(code).toLowerCase()] || code; }
     function toggleSidebar() { const sb=document.getElementById('sidebar'), ov=document.getElementById('sidebar-overlay'); isSidebarOpen=!isSidebarOpen; if(isSidebarOpen){sb.classList.remove('-translate-x-full');ov.classList.remove('hidden');}else{sb.classList.add('-translate-x-full');ov.classList.add('hidden');} }
     async function callApi(action, data = {}) { const body = JSON.stringify({ action, ...data }); const response = await fetch(API_URL, { method: 'POST', body: body, headers: { "Content-Type": "text/plain;charset=utf-8" } }); return await response.json(); }
 
+    // --- Data Handler ---
     window.dataSdk = {
       init: async (handler) => { window.dataSdkHandler = handler; await window.dataSdk.refresh(); return { isOk: true }; },
       refresh: async () => { 
@@ -74,6 +77,7 @@
 
     function render() { const app = document.getElementById('app'); if(currentView === 'login') renderLogin(); else if(currentView === 'admin') renderAdminDashboard(); else if(currentView === 'student' && currentUser) { const u = studentsData.find(s => String(s.national_id) === String(currentUser.national_id)); if(u) currentUser = u; renderStudentView(); } }
 
+    // --- 1. LOGIN VIEW ---
     function renderLogin() {
       document.getElementById('app').innerHTML = `
         <div class="h-full w-full bg-[#B2B2B2] flex flex-col items-center justify-center p-4 overflow-auto">
@@ -93,7 +97,7 @@
              </div>
              <div id="login-form-container" class="hidden relative z-10 bg-gray-50/80 p-5 rounded-2xl border border-gray-100">
                <form onsubmit="handleLogin(event)" class="space-y-4">
-                 <div id="input-student" class="hidden"><label class="block text-xs font-bold text-gray-500 mb-2 uppercase">เลขบัตรประชาชน</label><input type="text" id="login-id" class="w-full px-4 py-3 rounded-xl border-gray-200 input-field" placeholder="กรอกเลขบัตรประชาชน"></div>
+                 <div id="input-student" class="hidden"><label class="block text-xs font-bold text-gray-500 mb-2 uppercase">เลขบัตรประชาชน 13 หลัก</label><input type="text" id="login-id" class="w-full px-4 py-3 rounded-xl border-gray-200 input-field" placeholder="กรอกเลขบัตรประชาชน"></div>
                  <div id="input-admin" class="hidden space-y-3">
                     <div><label class="block text-xs font-bold text-gray-500 mb-2 uppercase">ชื่อผู้ใช้</label><input type="text" id="admin-user" class="w-full px-4 py-3 rounded-xl border-gray-200 input-field"></div>
                     <div><label class="block text-xs font-bold text-gray-500 mb-2 uppercase">รหัสผ่าน</label><input type="password" id="admin-pass" class="w-full px-4 py-3 rounded-xl border-gray-200 input-field"></div>
@@ -106,17 +110,21 @@
         </div>`;
     }
 
+    // --- 2. STUDENT VIEW (แก้ไขซ่อน ป.4-5 เรียบร้อย) ---
     function renderStudentView() {
        if(!currentUser) return;
        const maxSci = 40; const maxMath = 30; const maxEng = 30; const maxTotal = 100;
        const sSci = parseFloat(currentUser.science_score)||0; const sMath = parseFloat(currentUser.math_score)||0; const sEng = parseFloat(currentUser.english_score)||0; const sTotal = sSci + sMath + sEng;
        const pSci = (sSci/maxSci)*100; const pMath = (sMath/maxMath)*100; const pEng = (sEng/maxEng)*100;
        const thaiGrade = getThaiGrade(currentUser.grade_level);
+       
+       // Logic ตรวจสอบระดับชั้น
        const rawGrade = String(currentUser.grade_level).toLowerCase().trim();
+       // ตรวจให้ครอบคลุมทั้งรหัสและชื่อไทย
        const isP4 = rawGrade.includes('p4') || rawGrade.includes('ประถมศึกษาปีที่ 4');
        const isP5 = rawGrade.includes('p5') || rawGrade.includes('ประถมศึกษาปีที่ 5');
-       const isPreTest = isP4 || isP5; 
-       const isSecondary = rawGrade.includes('m3') || rawGrade.includes('มัธยม'); 
+       const isPreTest = isP4 || isP5; // เป็น ป.4 หรือ ป.5
+       const isSecondary = rawGrade.includes('m3') || rawGrade.includes('มัธยม');
 
        document.getElementById('app').innerHTML = `
           <div class="h-full bg-[#fdfbf7] overflow-auto">
@@ -137,12 +145,16 @@
                         <div class="flex-1 text-center md:text-left w-full">
                             <h2 class="text-2xl font-bold text-gray-800 mb-1">${currentUser.full_name}</h2>
                             <p class="text-lime-600 font-medium mb-4 text-sm">${thaiGrade}</p>
+                            
                             ${!isPreTest ? (currentUser.admission_result ? `<div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl text-center"><p class="text-green-800 font-bold text-lg">ขอแสดงความยินดี</p><p class="text-green-600">ผ่านการคัดเลือกเข้าศึกษาต่อโครงการ <span class="font-bold text-xl block mt-1">${currentUser.admission_result}</span></p></div>` : `<div class="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-xl text-center"><p class="text-gray-500">ยังไม่ผ่านเกณฑ์การคัดเลือกในรอบโควตา</p></div>`) : ''}
+                            
                             <div class="grid grid-cols-1 gap-3 text-gray-600 text-sm mb-4">
                                 <div class="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 flex justify-between"><span>เลขประจำตัวสอบ</span><span class="font-bold text-gray-800">${currentUser.exam_id}</span></div>
                                 <div class="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 flex justify-between"><span>ลำดับที่ (คะแนนรวม)</span><span class="font-bold text-blue-600">#${currentUser.rank}</span></div>
                             </div>
-                            ${!isPreTest ? `<div class="border-t border-gray-100 pt-4"><p class="text-xs text-gray-400 font-bold mb-2 text-left">ลำดับการเลือกห้องเรียนโครงการ</p><div class="grid ${isSecondary ? 'grid-cols-2' : 'grid-cols-3'} gap-2"><div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center"><span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 1</span><span class="text-sm font-bold text-gray-700 truncate block">${currentUser.choice_1 || '-'}</span></div><div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center"><span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 2</span><span class="text-sm font-bold text-gray-700 truncate block">${currentUser.choice_2 || '-'}</span></div>${!isSecondary ? `<div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center"><span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 3</span><span class="text-sm font-bold text-gray-700 truncate block">${currentUser.choice_3 || '-'}</span></div>` : ''}</div></div>` : ''} 
+
+                            ${!isPreTest ? `
+                            <div class="border-t border-gray-100 pt-4"><p class="text-xs text-gray-400 font-bold mb-2 text-left">ลำดับการเลือกห้องเรียนโครงการ</p><div class="grid ${isSecondary ? 'grid-cols-2' : 'grid-cols-3'} gap-2"><div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center"><span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 1</span><span class="text-sm font-bold text-gray-700 truncate block">${currentUser.choice_1 || '-'}</span></div><div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center"><span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 2</span><span class="text-sm font-bold text-gray-700 truncate block">${currentUser.choice_2 || '-'}</span></div>${!isSecondary ? `<div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center"><span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 3</span><span class="text-sm font-bold text-gray-700 truncate block">${currentUser.choice_3 || '-'}</span></div>` : ''}</div></div>` : ''} 
                         </div>
                    </div>
                 </div>
@@ -175,6 +187,7 @@
           </div>`;
     }
 
+    // --- 3. ADMIN DASHBOARD ---
     function renderAdminDashboard() {
       const m1 = studentsData.filter(s => ['p4','p5','p6','m1'].includes(s.grade_level.toLowerCase()));
       const m4 = studentsData.filter(s => ['m3','m4'].includes(s.grade_level.toLowerCase()));
@@ -225,8 +238,8 @@
                                </td>
                                <td class="px-4 py-4 font-bold text-center">${s.total_score}</td>
                                <td class="px-4 py-4 text-center flex justify-center gap-2">
-                                  <button onclick="showEditForm('${s.__backendId}')" class="bg-lime-100 text-lime-600 px-3 py-1 rounded text-xs font-bold">แก้ไข</button>
-                                  <button onclick="deleteStudent('${s.__backendId}')" class="bg-red-100 text-red-500 px-3 py-1 rounded text-xs font-bold">ลบ</button>
+                                  <button onclick="showEditForm('${s.__backendId}')" class="bg-lime-100 text-lime-600 hover:bg-lime-200 px-3 py-1 rounded text-xs font-bold transition-colors">แก้ไข</button>
+                                  <button onclick="deleteStudent('${s.__backendId}')" class="bg-red-100 text-red-500 hover:bg-red-200 px-3 py-1 rounded text-xs font-bold transition-colors">ลบ</button>
                                </td>
                             </tr>
                           `).join('')}
@@ -295,35 +308,7 @@
 
     function addMultipleRow() { const tr = document.createElement('tr'); tr.className = 'bg-white border-b hover:bg-gray-50'; tr.innerHTML = `<td class="p-2"><input type="text" class="w-full border rounded px-2 py-1 multi-national-id text-xs" placeholder="บัตรฯ"></td><td class="p-2"><input type="text" class="w-full border rounded px-2 py-1 multi-exam-id text-xs" placeholder="รหัส"></td><td class="p-2"><input type="text" class="w-full border rounded px-2 py-1 multi-name text-xs" placeholder="ชื่อ"></td><td class="p-2"><select class="w-full border rounded px-2 py-1 multi-grade text-xs"><option value="p6">ป.6</option><option value="p5">ป.5</option><option value="p4">ป.4</option><option value="m3">ม.3</option></select></td><td class="p-2"><input type="text" class="w-full border rounded px-2 py-1 multi-school text-xs" placeholder="รร."></td><td class="p-2 text-center"><button type="button" onclick="this.closest('tr').remove()" class="text-red-500 font-bold">x</button></td>`; document.getElementById('multiple-tbody').appendChild(tr); }
     function handleMultipleSubmit() { const rows = document.querySelectorAll('#multiple-tbody tr'); const bulkData = []; rows.forEach(row => { const nid = row.querySelector('.multi-national-id').value.trim(); const id = row.querySelector('.multi-exam-id').value.trim(); const name = row.querySelector('.multi-name').value.trim(); if(id && name) bulkData.push({ exam_id: id, national_id: nid, full_name: name, grade_level: row.querySelector('.multi-grade').value, previous_school: row.querySelector('.multi-school').value.trim(), thai_score:0, math_score:0, science_score:0, english_score:0, aptitude_score:0, total_score:0, rank:0 }); }); if(bulkData.length === 0) return showAlert('แจ้งเตือน', 'กรุณากรอกข้อมูลอย่างน้อย 1 รายการ'); showConfirm('ยืนยัน', `เพิ่ม ${bulkData.length} รายการ?`, () => { showLoading('กำลังบันทึก...'); window.dataSdk.createBulk(bulkData).then(res => { setTimeout(() => { hideLoading(); if(res.isOk) { closeModal(); showAlert('สำเร็จ', 'บันทึกเรียบร้อย'); } else { showAlert('ผิดพลาด', res.error.message); } }, 500); }); }); }
-    
-    // --- Updated Excel Logic to include choices ---
-    function handleExcelUpload(input, type) { 
-        if(!input.files[0]) return; const reader = new FileReader(); 
-        reader.onload = (e) => { 
-            const workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'}); 
-            const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1, raw: false, defval: ""}); 
-            if(type === 'student') { 
-                excelDataCache = []; 
-                for(let i=1; i<jsonData.length; i++) { 
-                    const row = jsonData[i]; 
-                    if(row[0] && row[2]) excelDataCache.push({ 
-                        exam_id: String(row[0]), national_id: String(row[1]||''), full_name: String(row[2]), grade_level: String(row[3]||'m3').toLowerCase(), previous_school: String(row[4]||''), 
-                        // Map Columns F, G, H to Choices
-                        choice_1: String(row[5]||''), choice_2: String(row[6]||''), choice_3: String(row[7]||''), 
-                        thai_score:0, math_score:0, science_score:0, english_score:0, aptitude_score:0, total_score:0, rank:0 
-                    }); 
-                } 
-                document.getElementById('excel-count').textContent = excelDataCache.length; 
-                document.getElementById('excel-preview-area').classList.remove('hidden'); 
-                // Show choice 1 in preview to confirm it worked
-                document.getElementById('excel-preview-table').innerHTML = `<thead><tr class="bg-gray-100"><th>รหัส</th><th>ชื่อ</th><th>โครงการ 1</th></tr></thead><tbody>` + excelDataCache.slice(0,5).map(p=>`<tr><td>${p.exam_id}</td><td>${p.full_name}</td><td>${p.choice_1}</td></tr>`).join('') + `</tbody>`; 
-            } else if(type === 'score') { 
-                scoreDataCache = []; for(let i=1; i<jsonData.length; i++) { const row = jsonData[i]; if(row[0]) scoreDataCache.push({ exam_id: String(row[0]), science_score: row[1]||0, math_score: row[2]||0, english_score: row[3]||0 }); } 
-                document.getElementById('score-count').textContent = scoreDataCache.length; document.getElementById('score-preview-area').classList.remove('hidden'); document.getElementById('score-preview-table').innerHTML = `<thead><tr class="bg-gray-100"><th>รหัส</th><th>วิทย์</th><th>คณิต</th><th>อังกฤษ</th></tr></thead><tbody>` + scoreDataCache.slice(0,5).map(p=>`<tr><td>${p.exam_id}</td><td>${p.science_score}</td><td>${p.math_score}</td><td>${p.english_score}</td></tr>`).join('') + `</tbody>`; 
-            } 
-        }; reader.readAsArrayBuffer(input.files[0]); 
-    }
-    
+    function handleExcelUpload(input, type) { if(!input.files[0]) return; const reader = new FileReader(); reader.onload = (e) => { const workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'}); const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1, raw: false, defval: ""}); if(type === 'student') { excelDataCache = []; for(let i=1; i<jsonData.length; i++) { const row = jsonData[i]; if(row[0] && row[2]) excelDataCache.push({ exam_id: String(row[0]), national_id: String(row[1]||''), full_name: String(row[2]), grade_level: String(row[3]||'m3').toLowerCase(), previous_school: String(row[4]||''), choice_1: String(row[5]||''), choice_2: String(row[6]||''), choice_3: String(row[7]||''), thai_score:0, math_score:0, science_score:0, english_score:0, aptitude_score:0, total_score:0, rank:0 }); } document.getElementById('excel-count').textContent = excelDataCache.length; document.getElementById('excel-preview-area').classList.remove('hidden'); document.getElementById('excel-preview-table').innerHTML = `<thead><tr class="bg-gray-100"><th>รหัส</th><th>ชื่อ</th><th>ชั้น</th></tr></thead><tbody>` + excelDataCache.slice(0,5).map(p=>`<tr><td>${p.exam_id}</td><td>${p.full_name}</td><td>${p.grade_level}</td></tr>`).join('') + `</tbody>`; } else if(type === 'score') { scoreDataCache = []; for(let i=1; i<jsonData.length; i++) { const row = jsonData[i]; if(row[0]) scoreDataCache.push({ exam_id: String(row[0]), science_score: row[1]||0, math_score: row[2]||0, english_score: row[3]||0 }); } document.getElementById('score-count').textContent = scoreDataCache.length; document.getElementById('score-preview-area').classList.remove('hidden'); document.getElementById('score-preview-table').innerHTML = `<thead><tr class="bg-gray-100"><th>รหัส</th><th>วิทย์</th><th>คณิต</th><th>อังกฤษ</th></tr></thead><tbody>` + scoreDataCache.slice(0,5).map(p=>`<tr><td>${p.exam_id}</td><td>${p.science_score}</td><td>${p.math_score}</td><td>${p.english_score}</td></tr>`).join('') + `</tbody>`; } }; reader.readAsArrayBuffer(input.files[0]); }
     function confirmExcelImport(type) { if(type === 'student' && excelDataCache.length > 0) { showConfirm('ยืนยัน', `นำเข้า ${excelDataCache.length} รายการ?`, () => { showLoading('กำลังนำเข้า...'); window.dataSdk.createBulk(excelDataCache).then(res => { setTimeout(() => { hideLoading(); if(res.isOk) { closeModal(); showAlert('สำเร็จ', 'เรียบร้อย'); } else { showAlert('ผิดพลาด', res.error.message); } }, 500); }); }); } else if(type === 'score' && scoreDataCache.length > 0) { showConfirm('ยืนยัน', `อัปเดตคะแนน ${scoreDataCache.length} รายการ?`, () => { showLoading('กำลังอัปเดตคะแนน...'); window.dataSdk.updateScoresBulk(scoreDataCache).then(res => { setTimeout(() => { hideLoading(); if(res.isOk) { closeModal(); showAlert('สำเร็จ', res.message); } else { showAlert('ผิดพลาด', res.error.message); } }, 500); }); }); } }
 
     function showAlert(t, m) { document.getElementById('alert-title').textContent = t; document.getElementById('alert-message').textContent = m; document.getElementById('alert-modal').classList.remove('hidden-force'); }
