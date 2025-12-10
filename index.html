@@ -4,24 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ระบบประกาศผลคะแนน</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+    
     <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #f0fdf4; color: #4b5563; }
+        body { box-sizing: border-box; font-family: 'Sarabun', sans-serif; background-color: #f0fdf4; color: #4b5563; -webkit-tap-highlight-color: transparent; }
+        .gradient-bg { background-color: #C6E686; } 
+        .btn-primary { background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 100%); color: #78350f; transition: all 0.2s ease; cursor: pointer; }
+        .btn-primary:active { transform: scale(0.96); }
         .input-field { background-color: #f9fafb; border: 1px solid #e5e7eb; transition: all 0.2s ease; }
-        .input-field:focus { background-color: white; border-color: #C6E686; outline: none; }
-        .sidebar-btn { width: 100%; text-align: left; padding: 12px 16px; margin-bottom: 8px; border-radius: 12px; display: flex; align-items: center; gap: 12px; color: #4b5563; background: transparent; cursor: pointer; }
+        .input-field:focus { background-color: white; border-color: #C6E686; box-shadow: 0 0 0 3px rgba(198, 230, 134, 0.4); outline: none; }
+        .sidebar-btn { width: 100%; text-align: left; padding: 12px 16px; margin-bottom: 8px; border-radius: 12px; display: flex; align-items: center; gap: 12px; color: #4b5563; background: transparent; border: none; cursor: pointer; min-height: 48px; }
+        .sidebar-btn:active { background-color: #ecfdf5; }
         .sidebar-btn.active { background-color: #eefad2; color: #5a7a1a; font-weight: 600; }
         .modal-overlay { background-color: rgba(255, 255, 255, 0.6); backdrop-filter: blur(8px); }
+        #student-modal { transition: opacity 0.2s ease; z-index: 100; } 
+        body.modal-active { overflow: hidden !important; }
         .hidden-force { display: none !important; }
-        .tab-btn { border-bottom: 3px solid transparent; color: #9ca3af; padding: 12px 16px; cursor: pointer; }
+        .tab-btn { border-bottom: 3px solid transparent; color: #9ca3af; padding: 12px 16px; transition: all 0.2s; white-space: nowrap; cursor: pointer; }
         .tab-btn.active { border-bottom: 3px solid #84cc16; color: #4d7c0f; font-weight: bold; background-color: #f7fee7; }
     </style>
+
     <script>
-        // ==========================================
-        // ⚠️ วาง URL ใหม่ที่นี่ ⚠️
-        // ==========================================
+        // ===========================================================
+        // ⚠️ ใส่ URL Google Apps Script ของท่านที่นี่ ⚠️
+        // ===========================================================
         const API_URL = "https://script.google.com/macros/s/AKfycbxjl2-P7ia1wsrY_ptExFJWUWI4VUU8GKL9-XYujPSt-0TNAuEXNRw-VLibzq9cH0o/exec"; 
 
         const defaultConfig = { 
@@ -38,36 +47,32 @@
         window.dataSdk = {
             init: async (handler) => { window.dataSdkHandler = handler; await window.dataSdk.refresh(); return { isOk: true }; },
             refresh: async () => { 
-                const res = await callApi('getAllStudents');
-                if (res.success) { 
-                    let rawData = res.students.map(s => ({ ...s, __backendId: s.id })); 
-                    const m1 = rawData.filter(s => ['p4','p5','p6','m1'].includes(s.grade_level.toLowerCase())).sort((a,b)=>b.total_score - a.total_score);
-                    const m4 = rawData.filter(s => ['m3','m4'].includes(s.grade_level.toLowerCase())).sort((a,b)=>b.total_score - a.total_score);
-                    m1.forEach((s,i) => s.rank = i+1); m4.forEach((s,i) => s.rank = i+1);
-                    const finalData = [...m1, ...m4];
-                    if (window.dataSdkHandler?.onDataChanged) window.dataSdkHandler.onDataChanged(finalData); 
-                    return { isOk: true, data: finalData }; 
-                } 
-                return { isOk: false, error: { message: res.message } };
+                try {
+                    const res = await callApi('getAllStudents');
+                    if (res.success) { 
+                        let rawData = res.students.map(s => ({ ...s, __backendId: s.id })); 
+                        const m1 = rawData.filter(s => ['p4','p5','p6','m1'].includes(s.grade_level.toLowerCase())).sort((a,b)=>b.total_score - a.total_score);
+                        const m4 = rawData.filter(s => ['m3','m4'].includes(s.grade_level.toLowerCase())).sort((a,b)=>b.total_score - a.total_score);
+                        m1.forEach((s,i) => s.rank = i+1); m4.forEach((s,i) => s.rank = i+1);
+                        const finalData = [...m1, ...m4];
+                        if (window.dataSdkHandler?.onDataChanged) window.dataSdkHandler.onDataChanged(finalData); 
+                        return { isOk: true, data: finalData }; 
+                    } return { isOk: false, error: { message: res.message } };
+                } catch(e) { return { isOk: false, error: { message: e.message } }; }
             },
-            create: async (data) => { return await apiWrapper('createStudent', { data }); },
-            update: async (data) => { return await apiWrapper('updateStudent', { data: { ...data, id: data.__backendId } }); },
-            delete: async (data) => { return await apiWrapper('deleteStudent', { id: data.__backendId }); },
-            createBulk: async (data) => { return await apiWrapper('createStudentsBulk', { data }); },
-            updateScoresBulk: async (data) => { return await apiWrapper('updateScoresBulk', { data }); },
-            deleteBulk: async (ids) => { return await apiWrapper('deleteStudentsBulk', { ids }); }
+            create: async (data) => { try { const res = await callApi('createStudent', { data }); if(res.success) { await window.dataSdk.refresh(); return { isOk: true }; } return { isOk: false, error: { message: res.message } }; } catch(e) { return { isOk: false, error: { message: e.message } }; } },
+            createBulk: async (data) => { try { const res = await callApi('createStudentsBulk', { data: dataArray }); if(res.success) { await window.dataSdk.refresh(); return { isOk: true }; } return { isOk: false, error: { message: res.message } }; } catch(e) { return { isOk: false, error: { message: e.message } }; } },
+            updateScoresBulk: async (dataArray) => { try { const res = await callApi('updateScoresBulk', { data: dataArray }); if(res.success) { await window.dataSdk.refresh(); return { isOk: true, message: res.message }; } return { isOk: false, error: { message: res.message } }; } catch(e) { return { isOk: false, error: { message: e.message } }; } },
+            update: async (data) => { try { const updateData = { ...data, id: data.__backendId }; const res = await callApi('updateStudent', { data: updateData }); if(res.success) { await window.dataSdk.refresh(); return { isOk: true }; } return { isOk: false, error: { message: res.message } }; } catch(e) { return { isOk: false, error: { message: e.message } }; } },
+            delete: async (data) => { try { const res = await callApi('deleteStudent', { id: data.__backendId }); if(res.success) { await window.dataSdk.refresh(); return { isOk: true }; } return { isOk: false, error: { message: res.message } }; } catch(e) { return { isOk: false, error: { message: e.message } }; } },
+            deleteBulk: async (ids) => { try { const res = await callApi('deleteStudentsBulk', { ids }); if(res.success) { await window.dataSdk.refresh(); return { isOk: true }; } return { isOk: false, error: { message: res.message } }; } catch(e) { return { isOk: false, error: { message: e.message } }; } }
         };
 
-        async function apiWrapper(action, payload) {
-            const res = await callApi(action, payload);
-            if(res.success) { await window.dataSdk.refresh(); return { isOk: true, message: res.message }; }
-            return { isOk: false, error: { message: res.message } };
-        }
-
         const dataHandler = { onDataChanged(data) { studentsData = data.sort((a, b) => parseFloat(a.exam_id) - parseFloat(b.exam_id)); render(); }};
+
         function render() { const app = document.getElementById('app'); if(currentView === 'login') renderLogin(); else if(currentView === 'admin') renderAdminDashboard(); else if(currentView === 'student' && currentUser) { const u = studentsData.find(s => String(s.national_id) === String(currentUser.national_id)); if(u) currentUser = u; renderStudentView(); } }
 
-        // --- VIEWS ---
+        // 1. หน้า Login (แบบเดิมที่ท่านคุ้นเคย)
         function renderLogin() {
             document.getElementById('app').innerHTML = `
             <div class="h-full w-full bg-[#B2B2B2] flex flex-col items-center justify-center p-4 overflow-auto">
@@ -82,8 +87,8 @@
                         <p class="text-gray-400 mt-4 text-sm">ปีการศึกษา <span class="text-lime-600 font-bold">${defaultConfig.admission_year}</span></p>
                     </div>
                     <div class="space-y-3 mb-6 relative z-10" id="login-buttons">
-                        <button onclick="toggleLogin('student')" class="w-full py-4 px-6 rounded-2xl border-2 border-lime-300 text-lime-700 font-bold hover:bg-lime-50 transition-all flex items-center justify-center gap-3 shadow-sm">ผู้เข้าสอบ</button>
-                        <button onclick="toggleLogin('admin')" class="w-full py-4 px-6 rounded-2xl border-2 border-amber-200 text-amber-500 font-bold hover:bg-amber-50 transition-all flex items-center justify-center gap-3 shadow-sm">สำหรับแอดมิน</button>
+                        <button onclick="toggleLogin('student')" class="w-full py-4 px-6 rounded-2xl border-2 border-lime-300 text-lime-700 font-bold hover:bg-lime-50 active:scale-95 transition-all flex items-center justify-center gap-3 shadow-sm">ผู้เข้าสอบ</button>
+                        <button onclick="toggleLogin('admin')" class="w-full py-4 px-6 rounded-2xl border-2 border-amber-200 text-amber-500 font-bold hover:bg-amber-50 active:scale-95 transition-all flex items-center justify-center gap-3 shadow-sm">สำหรับแอดมิน</button>
                     </div>
                     <div id="login-form-container" class="hidden relative z-10 bg-gray-50/80 p-5 rounded-2xl border border-gray-100">
                         <form onsubmit="handleLogin(event)" class="space-y-4">
@@ -96,21 +101,19 @@
                         </form>
                     </div>
                 </div>
+                <div class="mt-6 text-center animate-pulse"><p class="text-xs text-white font-medium drop-shadow-md bg-black/10 px-3 py-1 rounded-full">พัฒนาระบบโดย ครูอานนท์ เมืองแก้ว</p></div>
             </div>`;
         }
 
-        // --- Handle Login (Instant Check) ---
+        // --- Handle Login (แก้กลับมาให้เหมือนเดิม ไม่มีการรอโหลด) ---
         function handleLogin(e) { 
             e.preventDefault(); 
             const isStudent = !document.getElementById('input-student').classList.contains('hidden'); 
+            
             if(isStudent){ 
-                // เช็คว่าโหลดข้อมูลเสร็จหรือยัง ถ้ายัง studentsData จะว่าง
-                if (studentsData.length === 0) {
-                     showAlert('กำลังโหลดข้อมูล', 'ระบบกำลังดึงข้อมูลอยู่ กรุณากดเข้าสู่ระบบใหม่อีกครั้งใน 2-3 วินาที');
-                     return;
-                }
-                const inputVal = document.getElementById('login-id').value.replace(/[^0-9]/g, '');
-                const user = studentsData.find(s => String(s.national_id).replace(/[^0-9]/g, '') === inputVal);
+                // ใช้การค้นหาแบบเดิมที่ท่านคุ้นเคย
+                const id = document.getElementById('login-id').value.trim();
+                const user = studentsData.find(s => String(s.national_id).trim() === id);
                 if(user){ currentUser = user; currentView = 'student'; render(); } 
                 else { showAlert('ไม่พบข้อมูล', 'ไม่พบเลขบัตรประชาชนนี้ในระบบ'); }
             } else { 
@@ -119,6 +122,7 @@
             } 
         }
 
+        // 2. หน้าแสดงผลผู้เข้าสอบ (Restore Layout เดิม + เพิ่มคะแนนปฏิบัติด้านล่าง)
         function renderStudentView() {
             if(!currentUser) return;
             const s = currentUser;
@@ -130,8 +134,11 @@
             const isSecondary = rawG.includes('m3') || rawG.includes('มัธยม');
             const showChoices = !isPreTest;
 
+            // คำนวณคะแนน
             const academicTotal = s.math_score + s.science_score + s.english_score;
             const practicalScore = s.practical_score || 0;
+            
+            // เกณฑ์คะแนนปฏิบัติ (S&M = 20, Others = 100)
             let maxPrac = 100;
             if (s.choice_1 && s.choice_1.includes('S&M')) maxPrac = 20;
             const maxGrandTotal = 100 + maxPrac;
@@ -142,37 +149,78 @@
                 <div class="gradient-bg h-48 w-full absolute top-0 left-0 z-0 rounded-b-[3rem] shadow-lg opacity-90"></div>
                 <div class="relative z-10 max-w-4xl mx-auto p-4 pt-8 pb-10">
                     <div class="flex justify-between items-start mb-6">
-                        <div class="flex flex-col"><span class="text-lg md:text-xl font-bold text-lime-900">ประกาศผลคะแนนการสอบ</span><span class="text-lg md:text-xl font-bold text-lime-900">แข่งขันทักษะวิชาการเพชรราชพฤกษ์</span><span class="text-lg md:text-xl font-bold text-lime-900">ปีการศึกษา 2569</span><span class="text-lime-800 font-medium text-sm mt-2">โรงเรียนบางสะพานวิทยา จังหวัดประจวบคีรีขันธ์</span></div>
+                        <div class="flex flex-col">
+                            <span class="text-lg md:text-xl font-bold text-lime-900 leading-tight">ประกาศผลคะแนนการสอบ</span>
+                            <span class="text-lg md:text-xl font-bold text-lime-900 leading-tight">แข่งขันทักษะวิชาการเพชรราชพฤกษ์</span>
+                            <span class="text-lg md:text-xl font-bold text-lime-900 leading-tight">ปีการศึกษา 2569</span>
+                            <span class="text-lime-800 font-medium text-sm mt-2">โรงเรียนบางสะพานวิทยา จังหวัดประจวบคีรีขันธ์</span>
+                        </div>
                         <button onclick="currentView='login';render()" class="shrink-0 bg-white/80 backdrop-blur-sm text-red-500 hover:bg-red-500 hover:text-white px-4 py-2 rounded-full text-xs font-bold shadow-sm border border-red-100 ml-2">ออกจากระบบ</button>
                     </div>
+                    
                     <div class="bg-white rounded-[2rem] p-6 shadow-xl mb-6 relative overflow-hidden border border-lime-100">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-lime-50 rounded-full -mr-10 -mt-10 opacity-60"></div>
                         <div class="flex flex-col md:flex-row items-center gap-6 relative z-10">
                             <div class="flex-1 text-center md:text-left w-full">
                                 <h2 class="text-2xl font-bold text-gray-800 mb-1">${s.full_name}</h2>
                                 <p class="text-lime-600 font-medium mb-4 text-sm">${getThaiGrade(s.grade_level)}</p>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-600 text-sm mb-4">
+                                
+                                <div class="grid grid-cols-1 gap-3 text-gray-600 text-sm mb-4">
                                     <div class="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 flex justify-between"><span>เลขประจำตัวสอบ</span><span class="font-bold text-gray-800">${s.exam_id}</span></div>
                                     <div class="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 flex justify-between"><span>โรงเรียนเดิม</span><span class="font-bold text-gray-800 truncate max-w-[150px]">${s.previous_school}</span></div>
-                                    <div class="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 flex justify-between md:col-span-2"><span>ลำดับที่ (คะแนนรวม)</span><span class="font-bold text-blue-600">#${s.rank}</span></div>
                                 </div>
-                                ${showChoices ? `<div class="border-t border-gray-100 pt-4"><p class="text-xs text-gray-400 font-bold mb-2 text-left">ลำดับการเลือกห้องเรียนโครงการ</p><div class="grid ${isSecondary ? 'grid-cols-2' : 'grid-cols-3'} gap-2"><div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center"><span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 1</span><span class="text-sm font-bold text-gray-700 truncate block">${s.choice_1 || '-'}</span></div><div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center"><span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 2</span><span class="text-sm font-bold text-gray-700 truncate block">${s.choice_2 || '-'}</span></div>${!isSecondary ? `<div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center"><span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 3</span><span class="text-sm font-bold text-gray-700 truncate block">${s.choice_3 || '-'}</span></div>` : ''}</div></div>` : ''}
+
+                                ${showChoices ? `
+                                <div class="border-t border-gray-100 pt-4"><p class="text-xs text-gray-400 font-bold mb-2 text-left">ลำดับการเลือกห้องเรียนโครงการ</p>
+                                    <div class="grid ${isSecondary ? 'grid-cols-2' : 'grid-cols-3'} gap-2">
+                                        <div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center"><span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 1</span><span class="text-sm font-bold text-gray-700 truncate block">${s.choice_1 || '-'}</span></div>
+                                        <div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center"><span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 2</span><span class="text-sm font-bold text-gray-700 truncate block">${s.choice_2 || '-'}</span></div>
+                                        ${!isSecondary ? `<div class="bg-blue-50/50 border border-blue-100 p-2 rounded-lg text-center"><span class="block text-[10px] text-blue-400 font-bold uppercase">อันดับ 3</span><span class="text-sm font-bold text-gray-700 truncate block">${s.choice_3 || '-'}</span></div>` : ''}
+                                    </div>
+                                </div>` : ''}
                             </div>
                         </div>
                     </div>
-                    <h3 class="text-gray-600 font-bold text-lg mb-4 ml-2">คะแนนรายวิชา (เต็ม 100)</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2"><div class="flex justify-between items-center mb-1"><span class="text-gray-600 text-xs font-bold uppercase">วิทยาศาสตร์</span><span class="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">เต็ม ${maxSci}</span></div><div class="flex justify-between items-end"><span class="text-3xl font-bold text-gray-800">${s.science_score}</span><span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">ร้อยละ ${pSci.toFixed(1)}</span></div></div>
-                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2"><div class="flex justify-between items-center mb-1"><span class="text-gray-600 text-xs font-bold uppercase">คณิตศาสตร์</span><span class="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">เต็ม ${maxMath}</span></div><div class="flex justify-between items-end"><span class="text-3xl font-bold text-gray-800">${s.math_score}</span><span class="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded-lg">ร้อยละ ${pMath.toFixed(1)}</span></div></div>
-                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2"><div class="flex justify-between items-center mb-1"><span class="text-gray-600 text-xs font-bold uppercase">ภาษาอังกฤษ</span><span class="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">เต็ม ${maxEng}</span></div><div class="flex justify-between items-end"><span class="text-3xl font-bold text-gray-800">${s.english_score}</span><span class="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded-lg">ร้อยละ ${pEng.toFixed(1)}</span></div></div>
+                    
+                    <h3 class="text-gray-600 font-bold text-lg mb-4 ml-2 flex items-center gap-2">คะแนนรายวิชา (เต็ม 100)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2 relative overflow-hidden group hover:shadow-md transition-shadow">
+                            <div class="flex justify-between items-center mb-1 relative z-10"><span class="text-gray-600 text-xs font-bold uppercase tracking-wider">วิทยาศาสตร์</span><span class="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">เต็ม ${maxSci}</span></div>
+                            <div class="flex justify-between items-end relative z-10"><span class="text-3xl font-bold text-gray-800">${s.science_score}</span><span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">ร้อยละ ${pSci.toFixed(1)}</span></div>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2 relative overflow-hidden group hover:shadow-md transition-shadow">
+                            <div class="flex justify-between items-center mb-1 relative z-10"><span class="text-gray-600 text-xs font-bold uppercase tracking-wider">คณิตศาสตร์</span><span class="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">เต็ม ${maxMath}</span></div>
+                            <div class="flex justify-between items-end relative z-10"><span class="text-3xl font-bold text-gray-800">${s.math_score}</span><span class="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded-lg">ร้อยละ ${pMath.toFixed(1)}</span></div>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2 relative overflow-hidden group hover:shadow-md transition-shadow">
+                            <div class="flex justify-between items-center mb-1 relative z-10"><span class="text-gray-600 text-xs font-bold uppercase tracking-wider">ภาษาอังกฤษ</span><span class="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">เต็ม ${maxEng}</span></div>
+                            <div class="flex justify-between items-end relative z-10"><span class="text-3xl font-bold text-gray-800">${s.english_score}</span><span class="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded-lg">ร้อยละ ${pEng.toFixed(1)}</span></div>
+                        </div>
                     </div>
-                    <div class="bg-gradient-to-r from-amber-100 to-orange-50 rounded-2xl p-5 border border-amber-200 shadow-sm mb-4 flex justify-between items-center"><span class="text-amber-800 font-bold uppercase text-sm">คะแนนรวม 3 วิชา (เต็ม 100)</span><span class="text-3xl font-black text-amber-600">${academicScore.toFixed(2)}</span></div>
-                    <div class="bg-gradient-to-r from-purple-100 to-indigo-50 rounded-2xl p-5 border border-purple-200 shadow-sm mb-4 flex justify-between items-center"><span class="text-purple-800 font-bold uppercase text-sm">คะแนนสอบปฏิบัติ (เต็ม ${maxPrac})</span><span class="text-3xl font-black text-purple-600">${practicalScore.toFixed(2)}</span></div>
-                    <div class="bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl p-6 border border-green-400 text-center relative overflow-hidden shadow-lg text-white"><div class="relative z-10 flex flex-col items-center"><p class="font-bold uppercase tracking-widest text-xs mb-2 opacity-90">คะแนนรวมทั้งหมด (เต็ม ${maxGrandTotal})</p><div class="flex items-baseline gap-2"><p class="text-6xl font-black drop-shadow-md tracking-tight">${grandTotal.toFixed(2)}</p></div><span class="text-xs font-bold bg-white/20 px-4 py-1.5 rounded-full mt-3">คิดเป็นร้อยละ ${((grandTotal/maxGrandTotal)*100).toFixed(1)}</span></div></div>
+
+                    <div class="bg-gradient-to-r from-amber-100 to-orange-50 rounded-2xl p-5 border border-amber-200 shadow-sm mb-4 flex justify-between items-center">
+                        <span class="text-amber-800 font-bold uppercase text-sm">คะแนนรวม 3 วิชา (เต็ม 100)</span>
+                        <span class="text-3xl font-black text-amber-600">${academicScore.toFixed(2)}</span>
+                    </div>
+
+                    <div class="bg-gradient-to-r from-purple-100 to-indigo-50 rounded-2xl p-5 border border-purple-200 shadow-sm mb-4 flex justify-between items-center">
+                        <span class="text-purple-800 font-bold uppercase text-sm">คะแนนสอบปฏิบัติ (เต็ม ${maxPrac})</span>
+                        <span class="text-3xl font-black text-purple-600">${practicalScore.toFixed(2)}</span>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl p-6 border border-green-400 text-center relative overflow-hidden shadow-lg text-white">
+                        <div class="relative z-10 flex flex-col items-center">
+                            <p class="font-bold uppercase tracking-widest text-xs mb-2 opacity-90">คะแนนรวมทั้งหมด (เต็ม ${maxGrandTotal})</p>
+                            <div class="flex items-baseline gap-2"><p class="text-6xl font-black drop-shadow-md tracking-tight">${grandTotal.toFixed(2)}</p></div>
+                        </div>
+                    </div>
+
                     <div class="mt-8 mb-4 text-center border-t border-gray-200/50 pt-4"><p class="text-xs text-gray-400 font-medium">พัฒนาระบบโดย ครูอานนท์ เมืองแก้ว</p></div>
                 </div>
             </div>`;
         }
 
+        // --- Admin Dashboard (เหมือนเดิม) ---
         function renderAdminDashboard() {
             const m1 = studentsData.filter(s => ['p4','p5','p6','m1'].includes(s.grade_level.toLowerCase()));
             const m4 = studentsData.filter(s => ['m3','m4'].includes(s.grade_level.toLowerCase()));
@@ -211,7 +259,7 @@
             </div>`;
         }
 
-        // --- Utils ---
+        // --- Logic Functions ---
         function toggleLogin(mode) { document.getElementById('login-buttons').classList.add('hidden'); document.getElementById('login-form-container').classList.remove('hidden'); if(mode==='student'){document.getElementById('input-student').classList.remove('hidden');document.getElementById('input-admin').classList.add('hidden');}else{document.getElementById('input-student').classList.add('hidden');document.getElementById('input-admin').classList.remove('hidden');} }
         function resetLogin() { document.getElementById('login-form-container').classList.add('hidden'); document.getElementById('login-buttons').classList.remove('hidden'); }
         function triggerSearch() { searchQuery = document.getElementById('search-input').value.trim(); renderAdminDashboard(); }
@@ -238,21 +286,29 @@
 
         function showAddStudentForm() { formMode = 'create'; document.getElementById('modal-title').textContent = 'เพิ่มผู้เข้าสอบใหม่'; document.getElementById('student-form').reset(); document.getElementById('add-mode-tabs').classList.remove('hidden'); document.getElementById('score-section').classList.add('hidden'); switchAddTab('single'); updateChoiceOptions(); openModal(); }
         
+        // --- FIX: Show Edit Form (Auto Mapped for M.4) ---
         function showEditForm(id) { 
             formMode = 'update'; document.getElementById('modal-title').textContent = 'แก้ไขข้อมูล'; document.getElementById('add-mode-tabs').classList.add('hidden'); ['single','multiple','excel','score'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden')); document.getElementById('view-single').classList.remove('hidden'); document.getElementById('score-section').classList.remove('hidden'); 
             const s = studentsData.find(x => x.__backendId === id); if(!s) return; 
             document.getElementById('student-backend-id').value = s.__backendId; document.getElementById('form-national-id').value = s.national_id || ''; document.getElementById('form-exam-id').value = s.exam_id; 
+            
             const rawG = s.grade_level.trim().toLowerCase();
             let formGrade = 'p6'; 
             if(rawG.includes('4') && (rawG.includes('m') || rawG.includes('ม'))) formGrade = 'm3'; 
             else if(rawG.includes('3') && (rawG.includes('m') || rawG.includes('ม'))) formGrade = 'm3'; 
             else if(rawG.includes('4')) formGrade = 'p4'; else if(rawG.includes('5')) formGrade = 'p5'; else if(rawG.includes('6')) formGrade = 'p6';
             document.getElementById('form-grade').value = formGrade;
+
             document.getElementById('form-name').value = s.full_name; document.getElementById('form-school').value = s.previous_school; 
             document.getElementById('score-science').value = s.science_score; document.getElementById('score-math').value = s.math_score; document.getElementById('score-english').value = s.english_score; 
             document.getElementById('score-practical').value = s.practical_score || 0;
+
             updateChoiceOptions(); 
-            setTimeout(() => { if(s.choice_1) document.getElementById('form-choice-1').value = s.choice_1.trim(); if(s.choice_2) document.getElementById('form-choice-2').value = s.choice_2.trim(); if(s.choice_3) document.getElementById('form-choice-3').value = s.choice_3.trim(); }, 100); 
+            setTimeout(() => { 
+                if(s.choice_1) document.getElementById('form-choice-1').value = s.choice_1.trim(); 
+                if(s.choice_2) document.getElementById('form-choice-2').value = s.choice_2.trim(); 
+                if(s.choice_3) document.getElementById('form-choice-3').value = s.choice_3.trim(); 
+            }, 100); 
             openModal(); 
         }
         
