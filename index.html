@@ -407,24 +407,33 @@ function triggerSearch() { searchQuery = document.getElementById('search-input')
 function renderStudentView() {
     if(!currentUser) return;
 
+    // ตั้งค่าคะแนนเต็ม
     const maxSci = 40; const maxMath = 30; const maxEng = 30; const maxTotal = 100;
 
+    // ดึงคะแนน (ถ้าไม่มีให้เป็น 0)
     const sSci = parseFloat(currentUser.science_score)||0;
     const sMath = parseFloat(currentUser.math_score)||0;
     const sEng = parseFloat(currentUser.english_score)||0;
     const sTotal = sSci + sMath + sEng;
 
+    // คำนวณร้อยละ
     const pSci = (sSci/maxSci)*100;
     const pMath = (sMath/maxMath)*100;
     const pEng = (sEng/maxEng)*100;
 
     const thaiGrade = getThaiGrade(currentUser.grade_level);
-    
-    // --- Logic การแสดงผลโครงการ ---
     const grade = currentUser.grade_level.toLowerCase();
-    // ถ้าเป็น ป.4 หรือ ป.5 ไม่ต้องแสดงส่วนโครงการเลย
+
+    // --- Logic การแสดงผลโครงการ (แก้ไขใหม่) ---
+    
+    // 1. เงื่อนไขการแสดงส่วนโครงการทั้งหมด:
+    // ถ้าเป็น ป.4 หรือ ป.5 -> ซ่อนทั้งหมด (false)
+    // ชั้นอื่น -> แสดง (true)
     const showProjectsSection = !['p4', 'p5'].includes(grade); 
-    // ถ้าเป็น ม.4 ให้แสดงแค่ 2 อันดับ (ซ่อนอันดับ 3), ชั้นอื่นแสดงครบ 3
+
+    // 2. เงื่อนไขการแสดงอันดับที่ 3:
+    // ถ้าเป็น ม.4 -> ซ่อนอันดับ 3 (false)
+    // ชั้นอื่นที่เหลือ -> แสดงอันดับ 3 (true)
     const showRank3 = grade !== 'm4'; 
 
     document.getElementById('app').innerHTML = `
