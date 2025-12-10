@@ -3,302 +3,324 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ระบบประกาศผลคะแนน - เพชรราชพฤกษ์</title>
+<title>ระบบประกาศผลคะแนน</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
 
 <style>
-    body { box-sizing: border-box; font-family: 'Sarabun', sans-serif; background-color: #f0fdf4; color: #4b5563; -webkit-tap-highlight-color: transparent; }
-    .gradient-bg { background-color: #C6E686; } 
-    .btn-primary { background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 100%); color: #78350f; transition: all 0.2s ease; cursor: pointer; }
-    .btn-primary:active { transform: scale(0.96); }
-    .input-field { background-color: #f9fafb; border: 1px solid #e5e7eb; transition: all 0.2s ease; }
-    .input-field:focus { background-color: white; border-color: #C6E686; box-shadow: 0 0 0 3px rgba(198, 230, 134, 0.4); outline: none; }
-    .sidebar-btn { width: 100%; text-align: left; padding: 12px 16px; margin-bottom: 8px; border-radius: 12px; display: flex; align-items: center; gap: 12px; color: #4b5563; background: transparent; border: none; cursor: pointer; min-height: 48px; }
-    .sidebar-btn.active { background-color: #eefad2; color: #5a7a1a; font-weight: 600; }
-    .hidden-force { display: none !important; }
-    .tab-btn { border-bottom: 3px solid transparent; color: #9ca3af; padding: 12px 16px; transition: all 0.2s; white-space: nowrap; cursor: pointer; }
-    .tab-btn.active { border-bottom: 3px solid #84cc16; color: #4d7c0f; font-weight: bold; background-color: #f7fee7; }
+body { box-sizing: border-box; font-family: 'Sarabun', sans-serif; background-color: #f0fdf4; color: #4b5563; -webkit-tap-highlight-color: transparent; }
+.gradient-bg { background-color: #C6E686; } 
+.btn-primary { background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 100%); color: #78350f; transition: all 0.2s ease; cursor: pointer; }
+.btn-primary:active { transform: scale(0.96); }
+.input-field { background-color: #f9fafb; border: 1px solid #e5e7eb; transition: all 0.2s ease; }
+.input-field:focus { background-color: white; border-color: #C6E686; box-shadow: 0 0 0 3px rgba(198, 230, 134, 0.4); outline: none; }
+.sidebar-btn { width: 100%; text-align: left; padding: 12px 16px; margin-bottom: 8px; border-radius: 12px; display: flex; align-items: center; gap: 12px; color: #4b5563; background: transparent; border: none; cursor: pointer; min-height: 48px; }
+.sidebar-btn.active { background-color: #eefad2; color: #5a7a1a; font-weight: 600; }
+.hidden-force { display: none !important; }
+.tab-btn { border-bottom: 3px solid transparent; color: #9ca3af; padding: 12px 16px; transition: all 0.2s; white-space: nowrap; cursor: pointer; }
+.tab-btn.active { border-bottom: 3px solid #84cc16; color: #4d7c0f; font-weight: bold; background-color: #f7fee7; }
 </style>
 
 <script>
-// --- ใส่ URL ของคุณที่นี่ ---
-const API_URL = "https://script.google.com/macros/s/AKfycbxjl2-P7ia1wsrY_ptExFJWUWI4VUU8GKL9-XYujPSt-0TNAuEXNRw-VLibzq9cH0o/exec";
-
-const defaultConfig = { 
-    system_title: "ระบบประกาศผลคะแนน<br>การสอบแข่งขันทักษะวิชาการเพชรราชพฤกษ์<br><span class='text-sm font-normal'>โรงเรียนบางสะพานวิทยา</span>", 
-    admission_year: "2569" 
-};
-
-let currentUser = null, currentView = 'login', adminTab = 'm1', studentsData = [], searchQuery = '', formMode = 'create', checkedIds = new Set();
+const API_URL = "https://script.google.com/macros/s/AKfycbxjl2-P7ia1wsrY_ptExFJWUWI4VUU8GKL9-XYujPSt-0TNAuEXNRw-VLibzq9cH0o/exec"
 
 async function callApi(action, data = {}) {
-    const body = JSON.stringify({ action, ...data });
-    const response = await fetch(API_URL, { method: 'POST', body: body, headers: { "Content-Type": "text/plain;charset=utf-8" } });
-    return await response.json();
+  const body = JSON.stringify({ action, ...data });
+  const response = await fetch(API_URL, { method: 'POST', body: body, headers: { "Content-Type": "text/plain;charset=utf-8" } });
+  return await response.json();
 }
 
-// Data Handling
-window.dataSdk = {
-    refresh: async () => {
-        try {
-            const res = await callApi('getAllStudents');
-            if (res.success) {
-                studentsData = res.students.map(s => ({ ...s, __backendId: s.id }));
-                render();
-                return { isOk: true };
-            }
-        } catch(e) { return { isOk: false }; }
-    },
-    update: async (data) => {
-        const updateData = { ...data, id: data.__backendId };
-        const res = await callApi('updateStudent', { data: updateData });
-        if(res.success) await window.dataSdk.refresh();
-        return res;
-    }
+const defaultConfig = { 
+  system_title: "ระบบประกาศผลคะแนน<br>การสอบแข่งขันทักษะวิชาการเพชรราชพฤกษ์<br><span class='text-sm font-normal'>โรงเรียนบางสะพานวิทยา จังหวัดประจวบคีรีขันธ์</span>", 
+  admission_year: "2569" 
 };
 
-function getThaiGrade(code) { const map = { 'p4': 'ป.4', 'p5': 'ป.5', 'p6': 'ป.6', 'm3': 'ม.3' }; return map[code.toLowerCase()] || code; }
+let currentUser = null, currentView = 'login', adminTab = 'm1', studentsData = [], searchQuery = '', formMode = 'create', excelDataCache = [], scoreDataCache = [], confirmCallback = null, isSidebarOpen = false, checkedIds = new Set();
+
+// SDK
+window.dataSdk = {
+  refresh: async () => {
+    try {
+      const res = await callApi('getAllStudents');
+      if (res.success) {
+        studentsData = res.students.map(s => ({ ...s, __backendId: s.id }));
+        if (currentView === 'student' && currentUser) {
+          currentUser = studentsData.find(s => s.national_id === currentUser.national_id);
+        }
+        render();
+        return { isOk: true };
+      }
+    } catch(e) { return { isOk: false }; }
+  },
+  update: async (data) => {
+    const updateData = { ...data, id: data.__backendId };
+    const res = await callApi('updateStudent', { data: updateData });
+    if(res.success) await window.dataSdk.refresh();
+    return { isOk: res.success, error: res };
+  },
+  delete: async (id) => {
+    const res = await callApi('deleteStudent', { id: id });
+    if(res.success) await window.dataSdk.refresh();
+    return { isOk: res.success };
+  }
+};
+
+function getThaiGrade(code) { const map = { 'p4': 'ประถมศึกษาปีที่ 4', 'p5': 'ประถมศึกษาปีที่ 5', 'p6': 'ประถมศึกษาปีที่ 6', 'm3': 'มัธยมศึกษาปีที่ 3' }; return map[code.toLowerCase()] || code; }
 
 function render() {
-    const app = document.getElementById('app');
-    if(currentView === 'login') renderLogin();
-    else if(currentView === 'admin') renderAdminDashboard();
-    else renderStudentView();
+  if(currentView === 'login') renderLogin();
+  else if(currentView === 'admin') renderAdminDashboard();
+  else renderStudentView();
 }
 
-// --- หน้า LOGIN ---
+// ---------------------------------------------
+// RENDER LOGIN: พื้นหลัง #B2B2B2 รูปแบบเดิม
+// ---------------------------------------------
 function renderLogin() {
-    document.getElementById('app').innerHTML = `
-    <div class="h-full w-full bg-[#B2B2B2] flex flex-col items-center justify-center p-4">
-        <div class="w-full max-w-md bg-white rounded-[2rem] shadow-xl p-8 text-center">
-            <img src="https://img2.pic.in.th/pic/-69-1.png" class="h-32 mx-auto mb-6">
-            <h2 class="text-xl font-bold mb-2">ระบบประกาศผลคะแนน</h2>
-            <p class="text-gray-500 mb-8">การสอบแข่งขันเพชรราชพฤกษ์ 2569</p>
-            <div id="login-buttons" class="space-y-3">
-                <button onclick="toggleLogin('student')" class="w-full py-4 border-2 border-lime-300 rounded-2xl font-bold text-lime-700">ผู้เข้าสอบ</button>
-                <button onclick="toggleLogin('admin')" class="w-full py-4 border-2 border-amber-200 rounded-2xl font-bold text-amber-500">แอดมิน</button>
-            </div>
-            <div id="login-form-container" class="hidden mt-4">
-                <form onsubmit="handleLogin(event)" class="space-y-4">
-                    <div id="input-student" class="hidden"><input type="text" id="login-id" class="w-full p-4 rounded-xl border border-gray-200" placeholder="เลขบัตรประชาชน 13 หลัก"></div>
-                    <div id="input-admin" class="hidden"><input type="password" id="admin-pass" class="w-full p-4 rounded-xl border border-gray-200" placeholder="รหัสผ่าน"></div>
-                    <button type="submit" class="w-full py-4 btn-primary rounded-xl font-bold">เข้าสู่ระบบ</button>
-                    <button type="button" onclick="location.reload()" class="text-gray-400 text-sm">กลับ</button>
-                </form>
-            </div>
-        </div>
-    </div>`;
+  document.getElementById('app').innerHTML = `
+  <div class="h-full w-full bg-[#B2B2B2] flex flex-col items-center justify-center p-4 overflow-auto">
+    <div class="w-full max-w-md bg-white rounded-[2rem] shadow-xl p-8 relative overflow-hidden shrink-0">
+      <div class="absolute -top-10 -right-10 w-32 h-32 bg-yellow-100 rounded-full opacity-50 blur-xl"></div>
+      <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-green-100 rounded-full opacity-50 blur-xl"></div>
+      <div class="text-center mb-8 relative z-10">
+        <div class="mx-auto mb-6"><img src="https://img2.pic.in.th/pic/-69-1.png" alt="โลโก้" class="h-32 w-auto mx-auto object-contain"></div>
+        <div class="text-gray-900 font-bold text-lg leading-tight">ระบบประกาศผลคะแนน</div>
+        <div class="text-gray-900 font-bold mt-1 leading-tight text-[14px] sm:text-xl">การสอบแข่งขันทักษะวิชาการเพชรราชพฤกษ์</div>
+        <p class="text-gray-600 text-xs sm:text-sm font-normal mt-2">โรงเรียนบางสะพานวิทยา</p>
+        <p class="text-gray-400 mt-4 text-sm">ปีการศึกษา <span class="text-lime-600 font-bold">${defaultConfig.admission_year}</span></p>
+      </div>
+      <div id="login-buttons" class="space-y-3 mb-6 relative z-10">
+        <button onclick="toggleLogin('student')" class="w-full py-4 px-6 rounded-2xl border-2 border-lime-300 text-lime-700 font-bold">ผู้เข้าสอบ</button>
+        <button onclick="toggleLogin('admin')" class="w-full py-4 px-6 rounded-2xl border-2 border-amber-200 text-amber-500 font-bold">สำหรับแอดมิน</button>
+      </div>
+      <div id="login-form-container" class="hidden bg-gray-50/80 p-5 rounded-2xl border border-gray-100 relative z-10">
+        <form onsubmit="handleLogin(event)" class="space-y-4">
+          <div id="input-student" class="hidden"><label class="block text-xs font-bold text-gray-500 mb-2 uppercase">เลขบัตรประชาชน 13 หลัก</label><input type="text" id="login-id" class="w-full p-4 rounded-xl border border-gray-200 input-field" placeholder="กรอกเลขบัตรฯ"></div>
+          <div id="input-admin" class="hidden space-y-3">
+            <div><label class="block text-xs font-bold text-gray-500 mb-2 uppercase">ชื่อผู้ใช้</label><input type="text" id="admin-user" class="w-full p-4 rounded-xl border border-gray-200 input-field" value="admin"></div>
+            <div><label class="block text-xs font-bold text-gray-500 mb-2 uppercase">รหัสผ่าน</label><input type="password" id="admin-pass" class="w-full p-4 rounded-xl border border-gray-200 input-field"></div>
+          </div>
+          <div class="flex gap-2"><button type="button" onclick="resetLogin()" class="px-4 py-3 bg-gray-200 text-gray-600 rounded-xl font-bold">กลับ</button><button type="submit" class="flex-1 py-3 btn-primary rounded-xl font-bold transition-all">เข้าสู่ระบบ</button></div>
+        </form>
+      </div>
+    </div>
+    <div class="mt-6 text-center animate-pulse"><p class="text-xs text-white drop-shadow-md bg-black/10 px-3 py-1 rounded-full">พัฒนาระบบโดย ครูอานนท์ เมืองแก้ว</p></div>
+  </div>`;
 }
 
-function toggleLogin(mode) {
-    document.getElementById('login-buttons').classList.add('hidden');
-    document.getElementById('login-form-container').classList.remove('hidden');
-    if(mode==='student') document.getElementById('input-student').classList.remove('hidden');
-    else document.getElementById('input-admin').classList.remove('hidden');
-}
-
-function handleLogin(e) {
-    e.preventDefault();
-    if(!document.getElementById('input-student').classList.contains('hidden')) {
-        const id = document.getElementById('login-id').value.trim();
-        const user = studentsData.find(s => s.national_id === id);
-        if(user) { currentUser = user; currentView = 'student'; render(); }
-        else alert('ไม่พบข้อมูล');
-    } else {
-        if(document.getElementById('admin-pass').value === 'admin11275') { currentView = 'admin'; render(); }
-        else alert('รหัสผิด');
-    }
-}
-
-// --- หน้า ADMIN ---
+// ---------------------------------------------
+// RENDER ADMIN: รูปแบบเดิม + ปุ่มประมวลผล
+// ---------------------------------------------
 function renderAdminDashboard() {
-    let active = studentsData.filter(s => adminTab === 'm1' ? ['p4','p5','p6','m1'].includes(s.grade_level) : ['m3','m4'].includes(s.grade_level));
-    if(searchQuery) active = active.filter(s => s.full_name.includes(searchQuery) || s.exam_id.includes(searchQuery));
+  let active = studentsData.filter(s => adminTab === 'm1' ? ['p4','p5','p6','m1'].includes(s.grade_level) : ['m3','m4'].includes(s.grade_level));
+  if(searchQuery) active = active.filter(s => s.full_name.includes(searchQuery) || String(s.exam_id).includes(searchQuery));
 
-    document.getElementById('app').innerHTML = `
-    <div class="h-full flex overflow-hidden">
-        <div class="w-64 bg-white p-6 shadow-xl hidden md:flex flex-col">
-            <h2 class="font-bold mb-8">เมนูจัดการ</h2>
-            <button class="sidebar-btn ${adminTab==='m1'?'active':''}" onclick="adminTab='m1';render()">ข้อมูล ม.1</button>
-            <button class="sidebar-btn ${adminTab==='m4'?'active':''}" onclick="adminTab='m4';render()">ข้อมูล ม.4</button>
-            <button onclick="currentView='login';render()" class="mt-auto text-red-500">ออกจากระบบ</button>
+  document.getElementById('app').innerHTML = `
+  <div class="h-full flex flex-col md:flex-row overflow-hidden bg-[#f8fafc]">
+    <div id="sidebar" class="w-64 bg-white hidden md:flex flex-col p-6 shadow-xl">
+      <h2 class="text-lg font-bold text-gray-700 mb-8">ระบบแอดมิน</h2>
+      <div class="space-y-2 flex-1">
+        <button class="sidebar-btn ${adminTab==='m1'?'active':''}" onclick="adminTab='m1';render()">จัดการข้อมูล ม.1</button>
+        <button class="sidebar-btn ${adminTab==='m4'?'active':''}" onclick="adminTab='m4';render()">จัดการข้อมูล ม.4</button>
+        <button class="sidebar-btn border-t text-lime-600 pt-4" onclick="showAddStudentForm()">+ เพิ่มผู้เข้าสอบ</button>
+      </div>
+      <button class="sidebar-btn text-red-400 mt-auto" onclick="currentView='login';render()">ออกจากระบบ</button>
+    </div>
+    <div class="flex-1 overflow-auto p-4 md:p-10 w-full">
+      <div class="flex justify-between items-end mb-6">
+        <div><h1 class="text-2xl font-bold text-gray-800">ข้อมูลผู้สอบ ${adminTab==='m1'?'ม.1':'ม.4'}</h1><p class="text-gray-400 text-sm">ทั้งหมด ${active.length} คน</p></div>
+        <button onclick="processAdmission()" class="px-6 py-2 bg-indigo-500 text-white rounded-xl font-bold shadow-md">ประมวลผลจัดห้อง</button>
+      </div>
+      <div class="grid grid-cols-3 gap-4 mb-6">
+        <div class="bg-white p-5 rounded-2xl border-l-4 border-lime-300 shadow-sm flex justify-between"><span>สูงสุด</span><b class="text-lime-600">${active.length?Math.max(...active.map(s=>s.total_score)).toFixed(2):0}</b></div>
+        <div class="bg-white p-5 rounded-2xl border-l-4 border-amber-300 shadow-sm flex justify-between"><span>เฉลี่ย</span><b class="text-amber-600">${active.length?(active.reduce((a,b)=>a+b.total_score,0)/active.length).toFixed(2):0}</b></div>
+        <div class="bg-white p-5 rounded-2xl border-l-4 border-red-300 shadow-sm flex justify-between"><span>ต่ำสุด</span><b class="text-red-600">${active.length?Math.min(...active.map(s=>s.total_score)).toFixed(2):0}</b></div>
+      </div>
+      <div class="bg-white p-2 rounded-2xl shadow-sm mb-6 flex gap-2">
+        <input type="text" id="search-input" value="${searchQuery}" class="flex-1 p-3 bg-gray-50 rounded-xl" placeholder="ค้นหาชื่อ, รหัส...">
+        <button onclick="searchQuery=document.getElementById('search-input').value;render()" class="px-8 bg-lime-400 text-white rounded-xl font-bold">ค้นหา</button>
+      </div>
+      <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100">
+        <table class="w-full text-left min-w-[700px]">
+          <thead class="bg-lime-50/50 text-lime-800">
+            <tr><th class="p-4">รหัส</th><th class="p-4">ชื่อ-สกุล</th><th class="p-4">ชั้น</th><th class="p-4">ผลจัดห้อง</th><th class="p-4 text-center">จัดการ</th></tr>
+          </thead>
+          <tbody class="divide-y">
+            ${active.map(s => `<tr>
+              <td class="p-4 font-bold text-lime-600">${s.exam_id}</td>
+              <td class="p-4 font-medium">${s.full_name}</td>
+              <td class="p-4 text-gray-400 text-xs">${getThaiGrade(s.grade_level)}</td>
+              <td class="p-4"><span class="px-2 py-1 rounded bg-indigo-50 text-indigo-600 font-bold text-xs">${s.admission_result||'-'}</span></td>
+              <td class="p-4 text-center"><button onclick="showEditForm('${s.__backendId}')" class="text-lime-500 font-bold">แก้ไข</button></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ---------------------------------------------
+// RENDER STUDENT: รูปแบบเดิม + แถบสถานะสอบติด
+// ---------------------------------------------
+function renderStudentView() {
+  const s = currentUser;
+  const pSci = (s.science_score/40)*100, pMath = (s.math_score/30)*100, pEng = (s.english_score/30)*100;
+  
+  document.getElementById('app').innerHTML = `
+  <div class="h-full bg-[#fdfbf7] overflow-auto">
+    <div class="gradient-bg h-48 w-full absolute top-0 z-0 rounded-b-[3rem] shadow-lg"></div>
+    <div class="relative z-10 max-w-4xl mx-auto p-4 pt-8 pb-10">
+      <div class="flex justify-between items-start mb-6">
+        <div class="text-lime-900 font-bold leading-tight">ประกาศผลคะแนนการสอบ<br>เพชรราชพฤกษ์ 2569</div>
+        <button onclick="currentUser=null;currentView='login';render()" class="bg-white/80 text-red-500 px-4 py-2 rounded-full text-xs font-bold">ออก</button>
+      </div>
+      <div class="bg-white rounded-[2rem] p-6 shadow-xl mb-6 relative overflow-hidden border border-lime-100">
+        <div class="flex-1 text-center md:text-left">
+          <h2 class="text-2xl font-bold text-gray-800">${s.full_name}</h2>
+          <p class="text-lime-600 font-medium mb-4">${getThaiGrade(s.grade_level)}</p>
+          <div class="grid gap-2 text-sm text-gray-600">
+            <div class="bg-gray-50 p-3 rounded-xl flex justify-between"><span>รหัสสอบ</span><b class="text-gray-800">${s.exam_id}</b></div>
+            <div class="bg-gray-50 p-3 rounded-xl flex justify-between"><span>เลขบัตรฯ</span><b class="text-gray-800">${s.national_id}</b></div>
+          </div>
+          ${s.admission_result && s.admission_result !== 'ไม่ผ่านการคัดเลือก' ? `
+          <div class="mt-6 bg-gradient-to-r from-green-500 to-emerald-600 p-6 rounded-3xl text-white text-center shadow-lg">
+            <p class="text-xs uppercase font-bold opacity-80 mb-1">สอบผ่านการคัดเลือกโครงการ</p>
+            <p class="text-3xl font-black">${s.admission_result}</p>
+          </div>` : `
+          <div class="mt-6 p-4 bg-gray-100 rounded-3xl text-center text-gray-400 font-bold border-2 border-dashed">สถานะ: ${s.admission_result||'รอประกาศผล'}</div>`}
         </div>
-        <div class="flex-1 p-8 overflow-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h1 class="text-2xl font-bold">ข้อมูลผู้สอบ ${adminTab==='m1'?'ม.1':'ม.4'}</h1>
-                <button onclick="processAdmission()" class="px-6 py-2 bg-indigo-500 text-white rounded-xl font-bold">ประมวลผลจัดห้อง</button>
-            </div>
-            <div class="bg-white p-4 rounded-3xl shadow-sm mb-6 flex gap-2">
-                <input type="text" id="search-input" value="${searchQuery}" placeholder="ค้นชื่อหรือรหัส..." class="flex-1 p-3 bg-gray-50 rounded-xl">
-                <button onclick="searchQuery=document.getElementById('search-input').value;render()" class="px-8 bg-lime-400 text-white rounded-xl font-bold">ค้นหา</button>
-            </div>
-            <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100">
-                <table class="w-full text-left">
-                    <thead class="bg-lime-50 text-lime-800">
-                        <tr><th class="p-4">รหัส</th><th class="p-4">ชื่อ</th><th class="p-4">ชั้น</th><th class="p-4">ผลคัดเลือก</th><th class="p-4">จัดการ</th></tr>
-                    </thead>
-                    <tbody>
-                        ${active.map(s => `<tr class="border-t border-gray-50">
-                            <td class="p-4 font-mono">${s.exam_id}</td>
-                            <td class="p-4">${s.full_name}</td>
-                            <td class="p-4">${getThaiGrade(s.grade_level)}</td>
-                            <td class="p-4"><span class="px-2 py-1 rounded bg-indigo-50 text-indigo-600 font-bold">${s.admission_result || '-'}</span></td>
-                            <td class="p-4"><button onclick="showEditForm('${s.__backendId}')" class="text-lime-600 font-bold">แก้ไข</button></td>
-                        </tr>`).join('')}
-                    </tbody>
-                </table>
-            </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+          <div class="flex justify-between text-xs font-bold text-gray-400 uppercase mb-2"><span>วิทย์</span><span>เต็ม 40</span></div>
+          <div class="flex justify-between items-end mb-2"><b>${s.science_score}</b><span class="text-[10px] text-blue-600">ร้อยละ ${pSci.toFixed(1)}</span></div>
+          <div class="w-full bg-gray-100 h-2 rounded-full"><div class="bg-blue-400 h-2 rounded-full" style="width:${pSci}%"></div></div>
         </div>
-    </div>`;
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+          <div class="flex justify-between text-xs font-bold text-gray-400 uppercase mb-2"><span>คณิต</span><span>เต็ม 30</span></div>
+          <div class="flex justify-between items-end mb-2"><b>${s.math_score}</b><span class="text-[10px] text-red-600">ร้อยละ ${pMath.toFixed(1)}</span></div>
+          <div class="w-full bg-gray-100 h-2 rounded-full"><div class="bg-red-400 h-2 rounded-full" style="width:${pMath}%"></div></div>
+        </div>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+          <div class="flex justify-between text-xs font-bold text-gray-400 uppercase mb-2"><span>อังกฤษ</span><span>เต็ม 30</span></div>
+          <div class="flex justify-between items-end mb-2"><b>${s.english_score}</b><span class="text-[10px] text-purple-600">ร้อยละ ${pEng.toFixed(1)}</span></div>
+          <div class="w-full bg-gray-100 h-2 rounded-full"><div class="bg-purple-400 h-2 rounded-full" style="width:${pEng}%"></div></div>
+        </div>
+      </div>
+      <div class="bg-amber-400 p-8 rounded-[2rem] text-center text-white shadow-lg">
+        <p class="text-xs uppercase font-bold opacity-80 mb-1">คะแนนรวมทั้งหมด</p>
+        <p class="text-6xl font-black">${s.total_score.toFixed(2)}</p>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ---------------------------------------------
+// LOGIC & MODALS (แทรกช่องเลือกโครงการ)
+// ---------------------------------------------
+function toggleLogin(mode) { document.getElementById('login-buttons').classList.add('hidden'); document.getElementById('login-form-container').classList.remove('hidden'); if(mode==='student') document.getElementById('input-student').classList.remove('hidden'); else document.getElementById('input-admin').classList.remove('hidden'); }
+function resetLogin() { document.getElementById('login-form-container').classList.add('hidden'); document.getElementById('login-buttons').classList.remove('hidden'); }
+function handleLogin(e) { 
+  e.preventDefault(); 
+  if(!document.getElementById('input-student').classList.contains('hidden')){
+    const id = document.getElementById('login-id').value.trim();
+    const user = studentsData.find(s => String(s.national_id) === id);
+    if(user){ currentUser=user; currentView='student'; render(); } else alert('ไม่พบข้อมูล');
+  } else {
+    if(document.getElementById('admin-pass').value === 'admin11275'){ currentView='admin'; render(); } else alert('รหัสผิด');
+  }
 }
 
 async function processAdmission() {
-    if(!confirm('ยืนยันประมวลผลจัดห้องเรียนตามลำดับคะแนนและอันดับการเลือก?')) return;
-    showLoading('กำลังประมวลผล...');
-    const res = await callApi('runAdmission');
-    hideLoading();
-    if(res.success) { alert(res.message); window.dataSdk.refresh(); }
+  if(!confirm('ยืนยันประมวลผลจัดห้องเรียนโครงการ (ม.1: S&M=80, GATE=60, EIS=60 | ม.4: SME=80, GATE=60)')) return;
+  showLoading('กำลังจัดโครงการ...');
+  const res = await callApi('runAdmission');
+  hideLoading();
+  if(res.success) { alert(res.message); window.dataSdk.refresh(); }
 }
 
-// --- หน้า STUDENT ---
-function renderStudentView() {
-    const s = currentUser;
-    document.getElementById('app').innerHTML = `
-    <div class="h-full bg-gray-50 overflow-auto">
-        <div class="gradient-bg h-48 rounded-b-[3rem] p-8">
-            <button onclick="currentView='login';render()" class="float-right text-red-600 bg-white px-4 py-1 rounded-full text-xs">ออก</button>
-            <h2 class="text-white font-bold text-xl">เพชรราชพฤกษ์ 2569</h2>
-        </div>
-        <div class="max-w-xl mx-auto -mt-20 p-4">
-            <div class="bg-white p-6 rounded-[2rem] shadow-xl mb-4">
-                <h3 class="text-2xl font-bold text-gray-800">${s.full_name}</h3>
-                <p class="text-lime-600 mb-4">${getThaiGrade(s.grade_level)}</p>
-                <hr class="mb-4">
-                ${s.admission_result && s.admission_result !== 'ไม่ผ่านการคัดเลือก' ? `
-                <div class="bg-gradient-to-r from-green-500 to-emerald-600 p-6 rounded-2xl text-white text-center shadow-lg">
-                    <p class="text-xs uppercase opacity-80 mb-1">ยินดีด้วย! ท่านสอบผ่านการคัดเลือก</p>
-                    <p class="text-3xl font-black">${s.admission_result}</p>
-                </div>` : `
-                <div class="p-4 border-2 border-dashed border-gray-200 rounded-2xl text-center text-gray-400 font-bold">
-                    สถานะ: ${s.admission_result || 'อยู่ระหว่างประมวลผล'}
-                </div>`}
-            </div>
-            
-            <div class="grid grid-cols-3 gap-2 mb-4 text-center">
-                <div class="bg-white p-4 rounded-2xl border border-gray-100"><span class="text-xs text-gray-400 block">วิทย์</span><b class="text-xl text-blue-500">${s.science_score}</b></div>
-                <div class="bg-white p-4 rounded-2xl border border-gray-100"><span class="text-xs text-gray-400 block">คณิต</span><b class="text-xl text-red-500">${s.math_score}</b></div>
-                <div class="bg-white p-4 rounded-2xl border border-gray-100"><span class="text-xs text-gray-400 block">อังกฤษ</span><b class="text-xl text-purple-500">${s.english_score}</b></div>
-            </div>
-
-            <div class="bg-amber-400 p-6 rounded-3xl text-white text-center">
-                <p class="text-xs font-bold mb-1">คะแนนรวมทั้งหมด</p>
-                <p class="text-5xl font-black">${s.total_score}</p>
-            </div>
-        </div>
-    </div>`;
-}
-
-// --- EDIT MODAL & FORM ---
 function showEditForm(id) {
-    const s = studentsData.find(x => x.__backendId === id);
-    if(!s) return;
-    openModal();
-    document.getElementById('modal-title').innerText = "แก้ไขข้อมูล - " + s.full_name;
-    document.getElementById('student-backend-id').value = s.__backendId;
-    document.getElementById('form-exam-id').value = s.exam_id;
-    document.getElementById('form-national-id').value = s.national_id;
-    document.getElementById('form-grade').value = s.grade_level.toLowerCase();
-    document.getElementById('form-name').value = s.full_name;
-    document.getElementById('score-science').value = s.science_score;
-    document.getElementById('score-math').value = s.math_score;
-    document.getElementById('score-english').value = s.english_score;
-    updateChoiceOptions();
-    setTimeout(() => {
-        document.getElementById('form-choice-1').value = s.choice_1;
-        document.getElementById('form-choice-2').value = s.choice_2;
-        document.getElementById('form-choice-3').value = s.choice_3;
-    }, 100);
+  const s = studentsData.find(x => x.__backendId === id);
+  if(!s) return;
+  document.getElementById('student-backend-id').value = s.__backendId;
+  document.getElementById('form-exam-id').value = s.exam_id;
+  document.getElementById('form-national-id').value = s.national_id;
+  document.getElementById('form-grade').value = s.grade_level.toLowerCase();
+  document.getElementById('form-name').value = s.full_name;
+  document.getElementById('score-science').value = s.science_score;
+  document.getElementById('score-math').value = s.math_score;
+  document.getElementById('score-english').value = s.english_score;
+  updateChoiceOptions();
+  setTimeout(() => {
+    document.getElementById('form-choice-1').value = s.choice_1 || '';
+    document.getElementById('form-choice-2').value = s.choice_2 || '';
+    document.getElementById('form-choice-3').value = s.choice_3 || '';
+  }, 100);
+  openModal();
 }
 
 function updateChoiceOptions() {
     const grade = document.getElementById('form-grade').value;
     const choices = (['p6','m1'].includes(grade)) ? ['S&M', 'GATE', 'EIS', 'ทั่วไป'] : ['SME', 'GATE'];
     const html = `<option value="">- เลือก -</option>` + choices.map(c => `<option value="${c}">${c}</option>`).join('');
-    ['form-choice-1', 'form-choice-2', 'form-choice-3'].forEach(id => document.getElementById(id).innerHTML = html);
+    document.getElementById('form-choice-1').innerHTML = html;
+    document.getElementById('form-choice-2').innerHTML = html;
+    document.getElementById('form-choice-3').innerHTML = html;
 }
 
 async function handleSingleSubmit(e) {
-    e.preventDefault();
-    const data = {
-        __backendId: document.getElementById('student-backend-id').value,
-        exam_id: document.getElementById('form-exam-id').value,
-        national_id: document.getElementById('form-national-id').value,
-        grade_level: document.getElementById('form-grade').value,
-        full_name: document.getElementById('form-name').value,
-        science_score: parseFloat(document.getElementById('score-science').value),
-        math_score: parseFloat(document.getElementById('score-math').value),
-        english_score: parseFloat(document.getElementById('score-english').value),
-        choice_1: document.getElementById('form-choice-1').value,
-        choice_2: document.getElementById('form-choice-2').value,
-        choice_3: document.getElementById('form-choice-3').value,
-        total_score: parseFloat(document.getElementById('score-science').value) + parseFloat(document.getElementById('score-math').value) + parseFloat(document.getElementById('score-english').value)
-    };
-    showLoading('กำลังบันทึก...');
-    await window.dataSdk.update(data);
-    hideLoading();
-    closeModal();
+  e.preventDefault();
+  const s = parseFloat(document.getElementById('score-science').value)||0, m = parseFloat(document.getElementById('score-math').value)||0, eScore = parseFloat(document.getElementById('score-english').value)||0;
+  const data = {
+    __backendId: document.getElementById('student-backend-id').value,
+    exam_id: document.getElementById('form-exam-id').value,
+    national_id: document.getElementById('form-national-id').value,
+    grade_level: document.getElementById('form-grade').value,
+    full_name: document.getElementById('form-name').value,
+    science_score: s, math_score: m, english_score: eScore,
+    choice_1: document.getElementById('form-choice-1').value, choice_2: document.getElementById('form-choice-2').value, choice_3: document.getElementById('form-choice-3').value,
+    total_score: s+m+eScore
+  };
+  showLoading('กำลังบันทึก...');
+  await window.dataSdk.update(data);
+  hideLoading(); closeModal();
 }
 
 function openModal() { document.getElementById('student-modal').classList.remove('hidden-force'); }
 function closeModal() { document.getElementById('student-modal').classList.add('hidden-force'); }
-function showLoading(m) { document.getElementById('loading-modal').classList.remove('hidden-force'); }
+function showLoading(m) { document.getElementById('loading-modal').classList.remove('hidden-force'); document.getElementById('load-msg').innerText = m; }
 function hideLoading() { document.getElementById('loading-modal').classList.add('hidden-force'); }
 
 window.addEventListener('load', () => window.dataSdk.refresh());
 </script>
 </head>
-
 <body class="h-full">
-    <div id="app" class="h-full w-full"></div>
-
-    <div id="student-modal" class="hidden-force fixed inset-0 flex items-center justify-center z-[100] p-4">
-        <div class="absolute inset-0 bg-black/50" onclick="closeModal()"></div>
-        <div class="bg-white w-full max-w-2xl rounded-3xl p-8 relative z-10 max-h-[90vh] overflow-auto">
-            <h2 id="modal-title" class="text-xl font-bold mb-6">จัดการข้อมูล</h2>
-            <form id="student-form" onsubmit="handleSingleSubmit(event)" class="space-y-4">
-                <input type="hidden" id="student-backend-id">
-                <div class="grid grid-cols-2 gap-4">
-                    <input type="text" id="form-exam-id" placeholder="รหัสสอบ" class="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                    <input type="text" id="form-national-id" placeholder="บัตรประชาชน" class="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                </div>
-                <select id="form-grade" class="w-full p-4 bg-gray-50 rounded-xl border border-gray-100" onchange="updateChoiceOptions()">
-                    <option value="p4">ประถม 4</option><option value="p5">ประถม 5</option><option value="p6">ประถม 6</option><option value="m3">มัธยม 3</option>
-                </select>
-                <input type="text" id="form-name" placeholder="ชื่อ-นามสกุล" class="w-full p-4 bg-gray-50 rounded-xl border border-gray-100">
-                <div class="grid grid-cols-3 gap-2">
-                    <input type="number" id="score-science" placeholder="วิทย์" class="p-4 bg-blue-50 rounded-xl border border-blue-100">
-                    <input type="number" id="score-math" placeholder="คณิต" class="p-4 bg-red-50 rounded-xl border border-red-100">
-                    <input type="number" id="score-english" placeholder="อังกฤษ" class="p-4 bg-purple-50 rounded-xl border border-purple-100">
-                </div>
-                <div class="grid grid-cols-3 gap-2">
-                    <select id="form-choice-1" class="p-2 border rounded text-xs"></select>
-                    <select id="form-choice-2" class="p-2 border rounded text-xs"></select>
-                    <select id="form-choice-3" class="p-2 border rounded text-xs"></select>
-                </div>
-                <div class="flex gap-2">
-                    <button type="button" onclick="closeModal()" class="flex-1 py-4 bg-gray-100 rounded-xl font-bold">ยกเลิก</button>
-                    <button type="submit" class="flex-1 py-4 btn-primary rounded-xl font-bold">บันทึก</button>
-                </div>
-            </form>
+  <div id="app" class="h-full w-full"></div>
+  <div id="student-modal" class="hidden-force fixed inset-0 flex items-center justify-center z-[100] p-4">
+    <div class="absolute inset-0 bg-black/50" onclick="closeModal()"></div>
+    <div class="bg-white w-full max-w-2xl rounded-3xl p-8 relative z-10 max-h-[90vh] overflow-auto">
+      <h2 class="text-xl font-bold mb-6">แก้ไขข้อมูล</h2>
+      <form onsubmit="handleSingleSubmit(event)" class="space-y-4">
+        <input type="hidden" id="student-backend-id">
+        <div class="grid grid-cols-2 gap-4"><input type="text" id="form-exam-id" class="p-4 bg-gray-50 rounded-xl border"> <input type="text" id="form-national-id" class="p-4 bg-gray-50 rounded-xl border"></div>
+        <select id="form-grade" class="w-full p-4 bg-gray-50 rounded-xl border" onchange="updateChoiceOptions()">
+          <option value="p4">ป.4</option><option value="p5">ป.5</option><option value="p6">ป.6</option><option value="m3">ม.3</option>
+        </select>
+        <input type="text" id="form-name" class="w-full p-4 bg-gray-50 rounded-xl border">
+        <div class="grid grid-cols-3 gap-2">
+          <input type="number" id="score-science" placeholder="วิทย์" class="p-4 bg-blue-50 border rounded-xl"> <input type="number" id="score-math" placeholder="คณิต" class="p-4 bg-red-50 border rounded-xl"> <input type="number" id="score-english" placeholder="อังกฤษ" class="p-4 bg-purple-50 border rounded-xl">
         </div>
+        <div class="grid grid-cols-3 gap-2"><select id="form-choice-1" class="p-2 border rounded text-xs"></select> <select id="form-choice-2" class="p-2 border rounded text-xs"></select> <select id="form-choice-3" class="p-2 border rounded text-xs"></select></div>
+        <div class="flex gap-2"><button type="button" onclick="closeModal()" class="flex-1 py-4 bg-gray-100 rounded-xl">ยกเลิก</button><button type="submit" class="flex-1 py-4 btn-primary rounded-xl font-bold">บันทึก</button></div>
+      </form>
     </div>
-
-    <div id="loading-modal" class="hidden-force fixed inset-0 flex items-center justify-center z-[200]">
-        <div class="absolute inset-0 bg-white/80"></div>
-        <div class="animate-spin h-10 w-10 border-4 border-lime-500 border-t-transparent rounded-full relative z-10"></div>
-    </div>
+  </div>
+  <div id="loading-modal" class="hidden-force fixed inset-0 flex items-center justify-center z-[200]">
+    <div class="absolute inset-0 bg-white/80 backdrop-blur-sm"></div>
+    <div class="text-center relative"><div class="animate-spin h-10 w-10 border-4 border-lime-500 border-t-transparent rounded-full mx-auto mb-2"></div><p id="load-msg" class="text-lime-600 font-bold">โหลด...</p></div>
+  </div>
 </body>
 </html>
